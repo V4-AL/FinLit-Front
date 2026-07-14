@@ -1,18 +1,16 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useProgress } from '../contexts/ProgressContext';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '../navigation/AppNavigator';
-
 type NavigationProp = BottomTabNavigationProp<MainTabParamList, 'Dashboard'>;
-
 export default function DashboardScreen() {
   const { currentUser } = useAuth();
   const { xp, streak, level, levelProgress, completedLessons } = useProgress();
   const navigation = useNavigation<NavigationProp>();
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -33,7 +31,6 @@ export default function DashboardScreen() {
             </View>
           </View>
         </View>
-
         {/* Level & Progress Card */}
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
@@ -50,7 +47,6 @@ export default function DashboardScreen() {
             Earn {100 - levelProgress} more XP to reach Level {level + 1}!
           </Text>
         </View>
-
         {/* Primary CTA Card: Continue Learning */}
         <TouchableOpacity 
           style={styles.ctaCard} 
@@ -68,7 +64,6 @@ export default function DashboardScreen() {
             <Text style={styles.ctaPlayText}>▶️</Text>
           </View>
         </TouchableOpacity>
-
         {/* Quick Stats Grid */}
         <Text style={styles.sectionTitle}>Your Achievements</Text>
         <View style={styles.statsGrid}>
@@ -92,7 +87,6 @@ export default function DashboardScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

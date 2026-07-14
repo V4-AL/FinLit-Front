@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../contexts/AppContext';
-
 const { width } = Dimensions.get('window');
-
 interface Slide {
   title: string;
   description: string;
   illustration: string;
 }
-
 const slides: Slide[] = [
   {
     title: 'Learn money skills\nthe smart way',
@@ -27,11 +25,9 @@ const slides: Slide[] = [
     illustration: '📈',
   },
 ];
-
 export default function OnboardingScreen() {
   const { completeOnboarding } = useApp();
   const [currentSlide, setCurrentSlide] = useState(0);
-
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
@@ -39,9 +35,7 @@ export default function OnboardingScreen() {
       completeOnboarding();
     }
   };
-
   const activeSlide = slides[currentSlide];
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -49,13 +43,11 @@ export default function OnboardingScreen() {
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>
-
       <View style={styles.slideContainer}>
         <Text style={styles.illustration}>{activeSlide.illustration}</Text>
         <Text style={styles.title}>{activeSlide.title}</Text>
         <Text style={styles.description}>{activeSlide.description}</Text>
       </View>
-
       <View style={styles.footer}>
         {/* Pagination Dots */}
         <View style={styles.pagination}>
@@ -69,7 +61,6 @@ export default function OnboardingScreen() {
             />
           ))}
         </View>
-
         {/* CTA Button */}
         <TouchableOpacity style={styles.button} onPress={handleNext}>
           <Text style={styles.buttonText}>
@@ -80,7 +71,6 @@ export default function OnboardingScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

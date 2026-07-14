@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiService, Module, Lesson } from '../services/api';
 import { useProgress } from '../contexts/ProgressContext';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-
 type NavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
-
 // Fallback modules matching DataLoader json formats for premium demo resilience
 const FALLBACK_MODULES: Module[] = [
   {
@@ -84,28 +83,45 @@ const FALLBACK_MODULES: Module[] = [
     ]
   }
 ];
-
 export default function ModulesScreen() {
   const { completedLessons } = useProgress();
   const navigation = useNavigation<NavigationProp>();
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const fetchModules = async () => {
       try {
         const fetchedModules = await apiService.getModules();
         
-        // Let's merge nested lessons if the backend doesn't return them nested,
-        // or check if modules already have lessons nested.
-        // For standard demo, we will use our rich FALLBACK_MODULES if backend list is empty or fails.
+        let fetchedLessons: Lesson[] = [];
+        try {
+          fetchedLessons = await apiService.getLessons();
+        } catch (e) {
+          console.warn('Backend lessons fetch failed, fallback used', e);
+        }
+
         if (fetchedModules && fetchedModules.length > 0) {
-          // If modules exist from backend, map them and attach default lessons if they are missing
           const mapped = fetchedModules.map(m => {
-            const fallback = FALLBACK_MODULES.find(fm => fm.moduleId === m.moduleId || fm.title === m.title);
+            // Group lessons dynamically based on their JSON-seeded ID stored in `description`
+            let moduleLessons = fetchedLessons.filter(l => {
+              if (m.moduleId === 'module-1') {
+                return l.description === 'lesson-1' || l.description === 'lesson-2' || l.description === 'lesson-3';
+              }
+              if (m.moduleId === 'module-2') {
+                return l.description === 'lesson-4' || l.description === 'lesson-5';
+              }
+              return false;
+            });
+
+            // Fallback if no lessons found in backend or endpoints failed
+            if (moduleLessons.length === 0) {
+              const fallback = FALLBACK_MODULES.find(fm => fm.moduleId === m.moduleId || fm.title === m.title);
+              moduleLessons = fallback?.lessons || [];
+            }
+
             return {
               ...m,
-              lessons: m.lessons || fallback?.lessons || []
+              lessons: moduleLessons
             };
           });
           setModules(mapped);
@@ -119,24 +135,19 @@ export default function ModulesScreen() {
         setLoading(false);
       }
     };
-
     fetchModules();
   }, []);
-
   // Helper to determine if a lesson is unlocked
   const isLessonUnlocked = (lessonId: number, moduleIndex: number, lessonIndex: number) => {
     // First lesson of first module is always unlocked
     if (moduleIndex === 0 && lessonIndex === 0) return true;
-
     // Check if the lesson is already completed
     if (completedLessons.includes(lessonId)) return true;
-
     // Otherwise, check if the previous lesson in the current module is completed
     if (lessonIndex > 0) {
       const prevLesson = modules[moduleIndex].lessons?.[lessonIndex - 1];
       return prevLesson ? completedLessons.includes(prevLesson.id) : false;
     }
-
     // If it's the first lesson of a subsequent module, check if the last lesson of the previous module is completed
     if (moduleIndex > 0) {
       const prevModule = modules[moduleIndex - 1];
@@ -145,16 +156,13 @@ export default function ModulesScreen() {
       const lastLessonOfPrevModule = prevModuleLessons[prevModuleLessons.length - 1];
       return completedLessons.includes(lastLessonOfPrevModule.id);
     }
-
     return false;
   };
-
   const handleLessonClick = (lesson: Lesson, unlocked: boolean) => {
     if (unlocked) {
       navigation.navigate('Lesson', { lessonId: lesson.id, lessonTitle: lesson.title });
     }
   };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -162,14 +170,12 @@ export default function ModulesScreen() {
       </View>
     );
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Learning Modules</Text>
         <Text style={styles.headerSubtitle}>Follow your personal finance roadmap</Text>
       </View>
-
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {modules.map((mod, modIdx) => {
           const moduleLessons = mod.lessons || [];
@@ -186,19 +192,16 @@ export default function ModulesScreen() {
                 </View>
                 <Text style={styles.moduleTitle}>{mod.title}</Text>
                 <Text style={styles.moduleDescription}>{mod.description}</Text>
-
                 {/* Progress bar inside module header */}
                 <View style={styles.progressBarBg}>
                   <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
                 </View>
               </View>
-
               {/* Module Lessons Timeline */}
               <View style={styles.timelineList}>
                 {moduleLessons.map((lesson, lesIdx) => {
                   const completed = completedLessons.includes(lesson.id);
                   const unlocked = isLessonUnlocked(lesson.id, modIdx, lesIdx);
-
                   return (
                     <TouchableOpacity
                       key={lesson.id}
@@ -218,7 +221,6 @@ export default function ModulesScreen() {
                           {completed ? '✓' : !unlocked ? '🔒' : lesIdx + 1}
                         </Text>
                       </View>
-
                       <View style={styles.lessonInfo}>
                         <Text style={[
                           styles.lessonTitle,
@@ -245,7 +247,6 @@ export default function ModulesScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

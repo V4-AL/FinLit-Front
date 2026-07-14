@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, Animated, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, Animated, Image, ActivityIndicator } from 'react-native';
 
 export default function SplashScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -24,7 +24,11 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.logoContainer, { transform: [{ scale: pulseAnim }] }]}>
-        <Text style={styles.logoText}>🪙</Text>
+        <Image
+          source={require('../assets/splash_screen.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
       </Animated.View>
       <Text style={styles.appName}>FinLit</Text>
       <Text style={styles.subtitle}>Duolingo for Personal Finance</Text>
@@ -53,13 +57,14 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 4,
   },
-  logoText: {
-    fontSize: 50,
+  logoImage: {
+    width: 60,
+    height: 60,
   },
   appName: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#065F46', // Dark emerald
+    color: '#065F46',
     marginTop: 24,
     letterSpacing: 0.5,
   },

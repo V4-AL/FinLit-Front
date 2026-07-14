@@ -1,21 +1,18 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, Switch } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Switch } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useProgress } from '../contexts/ProgressContext';
-
 export default function SettingsScreen() {
   const { currentUser, logout } = useAuth();
   const { xp, level } = useProgress();
-
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [remindersEnabled, setRemindersEnabled] = React.useState(true);
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Settings</Text>
       </View>
-
       <View style={styles.content}>
         {/* Profile Info Card */}
         <View style={styles.profileCard}>
@@ -30,7 +27,6 @@ export default function SettingsScreen() {
             </View>
           </View>
         </View>
-
         {/* Settings options list */}
         <Text style={styles.sectionTitle}>App Settings</Text>
         <View style={styles.optionsList}>
@@ -43,9 +39,7 @@ export default function SettingsScreen() {
               thumbColor={soundEnabled ? '#10B981' : '#F3F4F6'}
             />
           </View>
-
           <View style={styles.separator} />
-
           <View style={styles.optionRow}>
             <Text style={styles.optionLabel}>🔔 Daily Reminders</Text>
             <Switch
@@ -56,7 +50,6 @@ export default function SettingsScreen() {
             />
           </View>
         </View>
-
         {/* Danger/Log Out Section */}
         <TouchableOpacity style={styles.logoutButton} onPress={logout} activeOpacity={0.8}>
           <Text style={styles.logoutButtonText}>Sign Out</Text>
@@ -65,7 +58,6 @@ export default function SettingsScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

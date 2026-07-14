@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator, Animated } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { apiService, Lesson } from '../services/api';
 import { useProgress } from '../contexts/ProgressContext';
-
 type LessonScreenRouteProp = RouteProp<RootStackParamList, 'Lesson'>;
-
 interface ContentBlock {
   type: 'text' | 'quiz';
   value?: string;
@@ -15,13 +14,11 @@ interface ContentBlock {
   options?: string[];
   answer?: number;
 }
-
 export default function LessonScreen() {
   const route = useRoute<LessonScreenRouteProp>();
   const navigation = useNavigation();
   const { lessonId, lessonTitle } = route.params;
   const { completeLesson } = useProgress();
-
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -31,13 +28,10 @@ export default function LessonScreen() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswerChecked, setIsAnswerChecked] = useState(false);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
-
   // Lesson complete transition state
   const [isFinished, setIsFinished] = useState(false);
-
   // XP Anim
   const xpScaleAnim = useState(new Animated.Value(0))[0];
-
   useEffect(() => {
     const fetchLesson = async () => {
       try {
@@ -87,13 +81,10 @@ export default function LessonScreen() {
         setLoading(false);
       }
     };
-
     fetchLesson();
   }, [lessonId]);
-
   const activeSlide = slides[currentSlide];
   const progressPercent = slides.length > 0 ? ((currentSlide + (isFinished ? 1 : 0)) / slides.length) * 100 : 0;
-
   const handleContinue = async () => {
     if (activeSlide.type === 'quiz' && !isAnswerChecked) {
       // Check answer
@@ -104,14 +95,12 @@ export default function LessonScreen() {
       setIsAnswerChecked(true);
       return;
     }
-
     if (activeSlide.type === 'quiz' && isAnswerChecked && !isAnswerCorrect) {
       // Try again if incorrect
       setIsAnswerChecked(false);
       setSelectedOption(null);
       return;
     }
-
     // Go to next slide or finish
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
@@ -130,11 +119,9 @@ export default function LessonScreen() {
       }).start();
     }
   };
-
   const handleQuit = () => {
     navigation.goBack();
   };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -142,7 +129,6 @@ export default function LessonScreen() {
       </View>
     );
   }
-
   // Completion screen layout
   if (isFinished) {
     return (
@@ -151,11 +137,9 @@ export default function LessonScreen() {
           <Text style={styles.cupEmoji}>🏆</Text>
           <Text style={styles.finishTitle}>Lesson Complete!</Text>
           <Text style={styles.finishSubtitle}>You are one step closer to financial freedom.</Text>
-
           <Animated.View style={[styles.xpBadge, { transform: [{ scale: xpScaleAnim }] }]}>
             <Text style={styles.xpText}>⭐ +10 XP</Text>
           </Animated.View>
-
           <TouchableOpacity style={styles.finishButton} onPress={handleQuit}>
             <Text style={styles.finishButtonText}>Return to Journey</Text>
           </TouchableOpacity>
@@ -163,7 +147,6 @@ export default function LessonScreen() {
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={styles.container}>
       {/* Top Header & Progress Bar */}
@@ -177,7 +160,6 @@ export default function LessonScreen() {
           </View>
         </View>
       </View>
-
       {/* Main Slide Content Card */}
       <View style={styles.contentCard}>
         {activeSlide.type === 'text' ? (
@@ -195,7 +177,6 @@ export default function LessonScreen() {
                 const isSelected = selectedOption === index;
                 const showCorrect = isAnswerChecked && index === activeSlide.answer;
                 const showWrong = isAnswerChecked && isSelected && !isAnswerCorrect;
-
                 return (
                   <TouchableOpacity
                     key={index}
@@ -222,7 +203,6 @@ export default function LessonScreen() {
           </View>
         )}
       </View>
-
       {/* Bottom Actions Banner */}
       <View style={[
         styles.actionFooter,
@@ -243,7 +223,6 @@ export default function LessonScreen() {
             </Text>
           </View>
         )}
-
         <TouchableOpacity
           style={[
             styles.continueButton,
@@ -266,7 +245,6 @@ export default function LessonScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

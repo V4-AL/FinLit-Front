@@ -73,6 +73,11 @@ export const apiService = {
     return response.data;
   },
 
+  getLessons: async (): Promise<Lesson[]> => {
+    const response = await apiClient.get<Lesson[]>('/lessons');
+    return response.data;
+  },
+
   // Progress endpoints
   saveProgress: async (username: string, lessonId: number, completed: boolean): Promise<UserProgress> => {
     const response = await apiClient.post<UserProgress>('/progress', {

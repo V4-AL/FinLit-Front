@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
-
 export default function AuthScreen() {
   const { login, signup } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
@@ -10,7 +10,6 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
   const handleSubmit = async () => {
     if (!email || !password || (!isLogin && !username)) {
       setError('Please fill in all fields.');
@@ -32,7 +31,6 @@ export default function AuthScreen() {
       setLoading(false);
     }
   };
-
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -47,10 +45,8 @@ export default function AuthScreen() {
               {isLogin ? 'Sign in to continue your financial journey' : 'Start learning and build daily habits'}
             </Text>
           </View>
-
           <View style={styles.card}>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
             {!isLogin && (
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Username</Text>
@@ -65,7 +61,6 @@ export default function AuthScreen() {
                 />
               </View>
             )}
-
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email Address</Text>
               <TextInput
@@ -79,7 +74,6 @@ export default function AuthScreen() {
                 autoCorrect={false}
               />
             </View>
-
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Password</Text>
               <TextInput
@@ -92,7 +86,6 @@ export default function AuthScreen() {
                 autoCapitalize="none"
               />
             </View>
-
             <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
@@ -101,7 +94,6 @@ export default function AuthScreen() {
               )}
             </TouchableOpacity>
           </View>
-
           <View style={styles.footer}>
             <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setError(''); }} style={styles.toggleButton}>
               <Text style={styles.toggleText}>
@@ -115,7 +107,6 @@ export default function AuthScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
