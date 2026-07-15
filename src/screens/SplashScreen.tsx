@@ -25,7 +25,7 @@ export default function SplashScreen() {
     <View style={styles.container}>
       <Animated.View style={[styles.logoContainer, { transform: [{ scale: pulseAnim }] }]}>
         <Image
-          source={require('../assets/splash_screen.png')}
+          source={require('../../assets/splash_screen.png')}
           style={styles.logoImage}
           resizeMode="contain"
         />
