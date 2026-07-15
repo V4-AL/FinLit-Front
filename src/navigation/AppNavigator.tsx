@@ -2,13 +2,12 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ActivityIndicator, View, Text } from 'react-native';
+import { View, Text } from 'react-native';
 
-// Contexts
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
-// Screens (to be implemented next)
 import SplashScreen from '../screens/SplashScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import AuthScreen from '../screens/AuthScreen';
@@ -34,7 +33,6 @@ export type MainTabParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// Custom helper icon component or simple emojis for tabs to make it lightweight
 const TabIcon = ({ name, color, size }: { name: string; color: string; size: number }) => {
   let emoji = '🏠';
   if (name === 'Modules') emoji = '📚';
@@ -47,23 +45,24 @@ const TabIcon = ({ name, color, size }: { name: string; color: string; size: num
 };
 
 const MainTabNavigator = () => {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ color, size }) => (
           <TabIcon name={route.name} color={color} size={size} />
         ),
-        tabBarActiveTintColor: '#10B981', // Premium Emerald Green
-        tabBarInactiveTintColor: '#9CA3AF', // Gray
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           borderTopWidth: 1,
-          borderTopColor: '#F3F4F6',
+          borderTopColor: colors.border,
           elevation: 0,
           shadowOpacity: 0,
           height: 56,
           paddingBottom: 8,
           paddingTop: 6,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: colors.tabBar,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -78,12 +77,16 @@ const MainTabNavigator = () => {
     </Tab.Navigator>
   );
 };
+
 export const AppNavigator = () => {
   const { isFirstLaunch, isLoading: appLoading } = useApp();
   const { currentUser, isLoading: authLoading } = useAuth();
+  const { isDark } = useTheme();
+
   if (appLoading || authLoading) {
     return <SplashScreen />;
   }
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -97,9 +100,7 @@ export const AppNavigator = () => {
             <Stack.Screen
               name="Lesson"
               component={LessonScreen}
-              options={{
-                gestureEnabled: false, // Prevent swiping back during lesson
-              }}
+              options={{ gestureEnabled: false }}
             />
           </>
         )}

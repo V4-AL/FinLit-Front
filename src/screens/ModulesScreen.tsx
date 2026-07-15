@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiService, Module, Lesson } from '../services/api';
 import { useProgress } from '../contexts/ProgressContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -85,6 +86,7 @@ const FALLBACK_MODULES: Module[] = [
 ];
 export default function ModulesScreen() {
   const { completedLessons } = useProgress();
+  const { colors } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,39 +182,36 @@ export default function ModulesScreen() {
   };
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#10B981" />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Learning Modules</Text>
-        <Text style={styles.headerSubtitle}>Follow your personal finance roadmap</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Learning Modules</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Follow your personal finance roadmap</Text>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {modules.map((mod, modIdx) => {
           const moduleLessons = mod.lessons || [];
           const completedCount = moduleLessons.filter(l => completedLessons.includes(l.id)).length;
           const progressPercent = moduleLessons.length > 0 ? (completedCount / moduleLessons.length) * 100 : 0;
-          
+
           return (
             <View key={mod.id} style={styles.moduleSection}>
-              {/* Module Header card */}
-              <View style={styles.moduleHeaderCard}>
+              <View style={[styles.moduleHeaderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.moduleMeta}>
-                  <Text style={styles.moduleNumber}>MODULE {modIdx + 1}</Text>
-                  <Text style={styles.moduleProgress}>{completedCount}/{moduleLessons.length} Completed</Text>
+                  <Text style={[styles.moduleNumber, { color: colors.accent }]}>MODULE {modIdx + 1}</Text>
+                  <Text style={[styles.moduleProgress, { color: colors.textSecondary }]}>{completedCount}/{moduleLessons.length} Completed</Text>
                 </View>
-                <Text style={styles.moduleTitle}>{mod.title}</Text>
-                <Text style={styles.moduleDescription}>{mod.description}</Text>
-                {/* Progress bar inside module header */}
-                <View style={styles.progressBarBg}>
-                  <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+                <Text style={[styles.moduleTitle, { color: colors.text }]}>{mod.title}</Text>
+                <Text style={[styles.moduleDescription, { color: colors.textSecondary }]}>{mod.description}</Text>
+                <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+                  <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: colors.accent }]} />
                 </View>
               </View>
-              {/* Module Lessons Timeline */}
               <View style={styles.timelineList}>
                 {moduleLessons.map((lesson, lesIdx) => {
                   const completed = completedLessons.includes(lesson.id);
@@ -222,34 +221,34 @@ export default function ModulesScreen() {
                       key={lesson.id}
                       style={[
                         styles.lessonRow,
-                        completed ? styles.lessonCompleted : null,
-                        !unlocked ? styles.lessonLocked : null,
+                        { backgroundColor: colors.surface, borderColor: colors.border },
+                        !unlocked ? { opacity: 0.6 } : null,
                       ]}
                       onPress={() => handleLessonClick(lesson, unlocked)}
                       activeOpacity={unlocked ? 0.7 : 1}
                     >
                       <View style={[
                         styles.indicatorCircle,
-                        completed ? styles.circleCompleted : !unlocked ? styles.circleLocked : styles.circleUnlocked
+                        completed
+                          ? { backgroundColor: colors.accentLight }
+                          : !unlocked
+                          ? { backgroundColor: colors.border }
+                          : { backgroundColor: colors.accentLight, borderWidth: 1.5, borderColor: colors.accent }
                       ]}>
-                        <Text style={styles.indicatorText}>
+                        <Text style={[styles.indicatorText, { color: colors.accent }]}>
                           {completed ? '✓' : !unlocked ? '🔒' : lesIdx + 1}
                         </Text>
                       </View>
                       <View style={styles.lessonInfo}>
-                        <Text style={[
-                          styles.lessonTitle,
-                          !unlocked ? styles.textLocked : null
-                        ]}>
+                        <Text style={[styles.lessonTitle, { color: unlocked ? colors.text : colors.textMuted }]}>
                           {lesson.title}
                         </Text>
-                        <Text style={styles.lessonMeta}>
+                        <Text style={[styles.lessonMeta, { color: colors.textSecondary }]}>
                           {lesson.duration} mins • {completed ? 'Completed' : unlocked ? 'Start Lesson' : 'Locked'}
                         </Text>
                       </View>
-                      
                       {unlocked && !completed && (
-                        <Text style={styles.arrowIcon}>➔</Text>
+                        <Text style={[styles.arrowIcon, { color: colors.accent }]}>➔</Text>
                       )}
                     </TouchableOpacity>
                   );
@@ -263,158 +262,27 @@ export default function ModulesScreen() {
   );
 }
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1F2937',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  scrollContent: {
-    padding: 24,
-  },
-  moduleSection: {
-    marginBottom: 32,
-  },
-  moduleHeaderCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  moduleMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  moduleNumber: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#10B981',
-    letterSpacing: 1,
-  },
-  moduleProgress: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#6B7280',
-  },
-  moduleTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#1F2937',
-    marginBottom: 6,
-  },
-  moduleDescription: {
-    fontSize: 13,
-    color: '#6B7280',
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  progressBarBg: {
-    height: 6,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#10B981',
-  },
-  timelineList: {
-    marginTop: 16,
-    paddingLeft: 12,
-  },
-  lessonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  lessonCompleted: {
-    backgroundColor: '#F9FAFB',
-    borderColor: '#E5E7EB',
-  },
-  lessonLocked: {
-    backgroundColor: '#F3F4F6',
-    borderColor: '#E5E7EB',
-    opacity: 0.75,
-  },
-  indicatorCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  circleCompleted: {
-    backgroundColor: '#D1FAE5',
-  },
-  circleUnlocked: {
-    backgroundColor: '#ECFDF5',
-    borderWidth: 1.5,
-    borderColor: '#10B981',
-  },
-  circleLocked: {
-    backgroundColor: '#E5E7EB',
-  },
-  indicatorText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#10B981',
-  },
-  lessonInfo: {
-    flex: 1,
-  },
-  lessonTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  textLocked: {
-    color: '#9CA3AF',
-  },
-  lessonMeta: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  arrowIcon: {
-    fontSize: 16,
-    color: '#10B981',
-    fontWeight: '700',
-  },
+  container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16, borderBottomWidth: 1 },
+  headerTitle: { fontSize: 24, fontWeight: '800' },
+  headerSubtitle: { fontSize: 14, marginTop: 4, fontWeight: '500' },
+  scrollContent: { padding: 24 },
+  moduleSection: { marginBottom: 32 },
+  moduleHeaderCard: { borderRadius: 20, padding: 20, borderWidth: 1, elevation: 1 },
+  moduleMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  moduleNumber: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+  moduleProgress: { fontSize: 11, fontWeight: '700' },
+  moduleTitle: { fontSize: 18, fontWeight: '800', marginBottom: 6 },
+  moduleDescription: { fontSize: 13, lineHeight: 18, marginBottom: 16 },
+  progressBarBg: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  progressBarFill: { height: '100%' },
+  timelineList: { marginTop: 16, paddingLeft: 12 },
+  lessonRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1 },
+  indicatorCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  indicatorText: { fontSize: 13, fontWeight: '800' },
+  lessonInfo: { flex: 1 },
+  lessonTitle: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  lessonMeta: { fontSize: 12, fontWeight: '500' },
+  arrowIcon: { fontSize: 16, fontWeight: '700' },
 });

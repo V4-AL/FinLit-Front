@@ -2,12 +2,16 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '../contexts/AppContext';
+import { useTheme } from '../contexts/ThemeContext';
+
 const { width } = Dimensions.get('window');
+
 interface Slide {
   title: string;
   description: string;
   illustration: string;
 }
+
 const slides: Slide[] = [
   {
     title: 'Learn money skills\nthe smart way',
@@ -25,9 +29,12 @@ const slides: Slide[] = [
     illustration: '📈',
   },
 ];
+
 export default function OnboardingScreen() {
   const { completeOnboarding } = useApp();
+  const { colors } = useTheme();
   const [currentSlide, setCurrentSlide] = useState(0);
+
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
@@ -35,34 +42,38 @@ export default function OnboardingScreen() {
       completeOnboarding();
     }
   };
+
   const activeSlide = slides[currentSlide];
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={completeOnboarding} style={styles.skipButton}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={[styles.skipText, { color: colors.textMuted }]}>Skip</Text>
         </TouchableOpacity>
       </View>
+
       <View style={styles.slideContainer}>
         <Text style={styles.illustration}>{activeSlide.illustration}</Text>
-        <Text style={styles.title}>{activeSlide.title}</Text>
-        <Text style={styles.description}>{activeSlide.description}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{activeSlide.title}</Text>
+        <Text style={[styles.description, { color: colors.textSecondary }]}>{activeSlide.description}</Text>
       </View>
+
       <View style={styles.footer}>
-        {/* Pagination Dots */}
         <View style={styles.pagination}>
           {slides.map((_, index) => (
             <View
               key={index}
               style={[
                 styles.dot,
-                index === currentSlide ? styles.activeDot : null,
+                { backgroundColor: colors.border },
+                index === currentSlide ? { width: 24, backgroundColor: colors.accent } : null,
               ]}
             />
           ))}
         </View>
-        {/* CTA Button */}
-        <TouchableOpacity style={styles.button} onPress={handleNext}>
+
+        <TouchableOpacity style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleNext}>
           <Text style={styles.buttonText}>
             {currentSlide === slides.length - 1 ? 'Start Learning' : 'Continue'}
           </Text>
@@ -71,87 +82,19 @@ export default function OnboardingScreen() {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    height: 50,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  skipButton: {
-    padding: 8,
-  },
-  skipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#9CA3AF',
-  },
-  slideContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  illustration: {
-    fontSize: 100,
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1F2937',
-    textAlign: 'center',
-    lineHeight: 36,
-    marginBottom: 16,
-  },
-  description: {
-    fontSize: 15,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 10,
-  },
-  footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    alignItems: 'center',
-  },
-  pagination: {
-    flexDirection: 'row',
-    marginBottom: 32,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 4,
-  },
-  activeDot: {
-    width: 24,
-    backgroundColor: '#10B981', // Emerald active color
-  },
-  button: {
-    width: '100%',
-    height: 56,
-    backgroundColor: '#10B981',
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  container: { flex: 1 },
+  header: { height: 50, alignItems: 'flex-end', justifyContent: 'center', paddingHorizontal: 24 },
+  skipButton: { padding: 8 },
+  skipText: { fontSize: 14, fontWeight: '600' },
+  slideContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  illustration: { fontSize: 100, marginBottom: 40, textAlign: 'center' },
+  title: { fontSize: 28, fontWeight: '800', textAlign: 'center', lineHeight: 36, marginBottom: 16 },
+  description: { fontSize: 15, textAlign: 'center', lineHeight: 22, paddingHorizontal: 10 },
+  footer: { paddingHorizontal: 24, paddingBottom: 40, alignItems: 'center' },
+  pagination: { flexDirection: 'row', marginBottom: 32 },
+  dot: { width: 8, height: 8, borderRadius: 4, marginHorizontal: 4 },
+  button: { width: '100%', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });
