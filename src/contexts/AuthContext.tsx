@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (email: string, username: string) => Promise<void>;
   signup: (email: string, username: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateAvatar: (avatarUri: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -103,8 +104,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateAvatar = async (avatarUri: string) => {
+    if (!currentUser) return;
+
+    const updatedUser = { ...currentUser, avatarUri };
+
+    try {
+      // 1. Persist locally so it survives app restarts
+      await AsyncStorage.setItem(USER_SESSION_KEY, JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+
+      // 2. Optionally sync to backend (safe to fail silently for now)
+      try {
+        await apiService.updateUser(updatedUser.id, { avatarUri });
+      } catch (backendError) {
+        console.warn('Backend avatar sync failed, avatar saved locally only', backendError);
+      }
+    } catch (error) {
+      console.error('Failed to update avatar', error);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ currentUser, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ currentUser, isLoading, login, signup, logout, updateAvatar }}>
       {children}
     </AuthContext.Provider>
   );

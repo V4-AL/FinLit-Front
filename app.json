@@ -7,7 +7,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to set a profile picture."
+        }
+      ]
+    ]
     },
     "android": {
       "adaptiveIcon": {
@@ -28,4 +36,6 @@
       }
     }
   }
+  
 }
+

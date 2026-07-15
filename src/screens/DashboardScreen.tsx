@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useProgress } from '../contexts/ProgressContext';
@@ -21,9 +21,18 @@ export default function DashboardScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Top Header Row */}
         <View style={styles.header}>
-          <View>
-            <Text style={[styles.greetingText, { color: colors.textSecondary }]}>Hello,</Text>
-            <Text style={[styles.usernameText, { color: colors.text }]}>{currentUser?.username || 'Learner'} 👋</Text>
+          <View style={styles.headerLeft}>
+            <View style={[styles.avatarCircle, { backgroundColor: colors.accentLight }]}>
+              {(currentUser as any)?.avatarUri ? (
+                <Image source={{ uri: currentUser?.avatarUri }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarEmoji}>👤</Text>
+              )}
+            </View>
+            <View>
+              <Text style={[styles.greetingText, { color: colors.textSecondary }]}>Hello,</Text>
+              <Text style={[styles.usernameText, { color: colors.text }]}>{currentUser?.username || 'Learner'} 👋</Text>
+            </View>
           </View>
           <View style={styles.statsBadges}>
             <View style={[styles.badgeStreak, { backgroundColor: colors.streakBadgeBg, borderColor: colors.streakBadgeBorder }]}>
@@ -87,6 +96,14 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContainer: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  avatarCircle: {
+    width: 48, height: 48, borderRadius: 24,
+    alignItems: 'center', justifyContent: 'center',
+    marginRight: 12, overflow: 'hidden',
+  },
+  avatarImage: { width: 48, height: 48, borderRadius: 24 },
+  avatarEmoji: { fontSize: 22 },
   greetingText: { fontSize: 16, fontWeight: '500' },
   usernameText: { fontSize: 24, fontWeight: '800', marginTop: 2 },
   statsBadges: { flexDirection: 'row' },

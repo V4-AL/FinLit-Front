@@ -1,17 +1,45 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Switch } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Switch, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { useProgress } from '../contexts/ProgressContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function SettingsScreen() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, updateAvatar } = useAuth();
   const { xp, level } = useProgress();
   const { colors, isDark, toggleTheme } = useTheme();
 
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [remindersEnabled, setRemindersEnabled] = React.useState(true);
+  const [uploading, setUploading] = React.useState(false);
+
+  const handlePickAvatar = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'We need access to your photos to set a profile picture.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets?.length > 0) {
+      setUploading(true);
+      try {
+        await updateAvatar(result.assets[0].uri);
+      } catch (error) {
+        Alert.alert('Upload failed', 'We couldn\'t update your profile picture. Please try again.');
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -22,9 +50,18 @@ export default function SettingsScreen() {
       <View style={styles.content}>
         {/* Profile Info Card */}
         <View style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[styles.avatarCircle, { backgroundColor: colors.accentLight }]}>
-            <Text style={styles.avatarEmoji}>👤</Text>
-          </View>
+          <TouchableOpacity onPress={handlePickAvatar} activeOpacity={0.7} disabled={uploading}>
+            <View style={[styles.avatarCircle, { backgroundColor: colors.accentLight }]}>
+              {currentUser?.avatarUri ? (
+                <Image source={{ uri: currentUser.avatarUri }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarEmoji}>👤</Text>
+              )}
+              <View style={[styles.editBadge, { backgroundColor: colors.accent, borderColor: colors.surface }]}>
+                <Text style={styles.editBadgeText}>{uploading ? '…' : '✎'}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
           <View style={styles.profileDetails}>
             <Text style={[styles.usernameText, { color: colors.text }]}>{currentUser?.username || 'Guest'}</Text>
             <Text style={[styles.emailText, { color: colors.textSecondary }]}>{currentUser?.email || 'no-email@example.com'}</Text>
@@ -114,8 +151,19 @@ const styles = StyleSheet.create({
   avatarCircle: {
     width: 64, height: 64, borderRadius: 32,
     alignItems: 'center', justifyContent: 'center', marginRight: 16,
+    overflow: 'visible',
+  },
+  avatarImage: {
+    width: 64, height: 64, borderRadius: 32,
   },
   avatarEmoji: { fontSize: 32 },
+  editBadge: {
+    position: 'absolute', bottom: -2, right: -2,
+    width: 22, height: 22, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2,
+  },
+  editBadgeText: { fontSize: 10, color: '#FFFFFF', fontWeight: '700' },
   profileDetails: { flex: 1 },
   usernameText: { fontSize: 18, fontWeight: '800' },
   emailText: { fontSize: 13, marginTop: 2, fontWeight: '500' },
@@ -140,7 +188,6 @@ const styles = StyleSheet.create({
   optionEmoji: { fontSize: 18, marginRight: 10 },
   optionLabel: { fontSize: 15, fontWeight: '600' },
   separator: { height: 1 },
-  // Custom animated-style toggle for dark mode
   themeToggleBtn: {
     width: 48, height: 26, borderRadius: 13,
     justifyContent: 'center',

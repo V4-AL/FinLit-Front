@@ -15,6 +15,7 @@ export interface User {
   id?: number;
   username: string;
   email: string;
+  avatarUri?: string;
 }
 
 export interface Lesson {
@@ -56,6 +57,11 @@ export const apiService = {
     return response.data;
   },
 
+  updateUser: async (id: number, updates: Partial<User>): Promise<User> => {
+    const response = await apiClient.put<User>(`/users/${id}`, updates);
+    return response.data;
+  },
+
   // Modules endpoints
   getModules: async (): Promise<Module[]> => {
     const response = await apiClient.get<Module[]>('/modules');
@@ -89,6 +95,7 @@ export const apiService = {
     });
     return response.data;
   },
+  
 
   getProgress: async (username: string): Promise<UserProgress[]> => {
     try {
