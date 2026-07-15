@@ -73,7 +73,7 @@ export const apiService = {
     return response.data;
   },
 
-  getLessons: async (): Promise<Lesson[]> => {
+  getAllLessons: async (): Promise<Lesson[]> => {
     const response = await apiClient.get<Lesson[]>('/lessons');
     return response.data;
   },

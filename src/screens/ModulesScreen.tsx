@@ -88,43 +88,61 @@ export default function ModulesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const fetchModules = async () => {
+    const fetchModulesAndLessons = async () => {
       try {
-        const fetchedModules = await apiService.getModules();
-        
-        let fetchedLessons: Lesson[] = [];
-        try {
-          fetchedLessons = await apiService.getLessons();
-        } catch (e) {
-          console.warn('Backend lessons fetch failed, fallback used', e);
-        }
+        // Fetch modules and all lessons concurrently
+        const [fetchedModules, fetchedLessons] = await Promise.all([
+          apiService.getModules(),
+          apiService.getAllLessons(),
+        ]);
 
         if (fetchedModules && fetchedModules.length > 0) {
-          const mapped = fetchedModules.map(m => {
-            // Group lessons dynamically based on their JSON-seeded ID stored in `description`
-            let moduleLessons = fetchedLessons.filter(l => {
-              if (m.moduleId === 'module-1') {
-                return l.description === 'lesson-1' || l.description === 'lesson-2' || l.description === 'lesson-3';
-              }
-              if (m.moduleId === 'module-2') {
-                return l.description === 'lesson-4' || l.description === 'lesson-5';
-              }
-              return false;
+          // Sort modules by moduleOrder
+          const sortedModules = [...fetchedModules].sort(
+            (a, b) => (a.moduleOrder ?? 0) - (b.moduleOrder ?? 0)
+          );
+
+          // Distribute lessons across modules evenly by order.
+          // Since the backend doesn't have a module FK on Lesson, we distribute
+          // them sequentially: split all lessons into groups based on module count.
+          let mappedModules: Module[];
+
+          if (fetchedLessons && fetchedLessons.length > 0) {
+            const totalModules = sortedModules.length;
+            const lessonsPerModule = Math.ceil(fetchedLessons.length / totalModules);
+
+            mappedModules = sortedModules.map((m, idx) => {
+              // Try finding the matching fallback to cross-reference
+              const fallback = FALLBACK_MODULES.find(
+                fm => fm.moduleId === m.moduleId || fm.title === m.title
+              );
+
+              // Slice lessons for this module from the sorted flat list
+              const sliceStart = idx * lessonsPerModule;
+              const sliceEnd = sliceStart + lessonsPerModule;
+              const backendLessonsForModule = fetchedLessons.slice(sliceStart, sliceEnd);
+
+              return {
+                ...m,
+                // Prefer real backend lessons; fallback to mock if slice is empty
+                lessons: backendLessonsForModule.length > 0
+                  ? backendLessonsForModule
+                  : fallback?.lessons || [],
+              };
             });
+          } else {
+            // Lessons endpoint empty or not yet populated — merge with fallback
+            mappedModules = sortedModules.map(m => {
+              const fallback = FALLBACK_MODULES.find(
+                fm => fm.moduleId === m.moduleId || fm.title === m.title
+              );
+              return { ...m, lessons: m.lessons || fallback?.lessons || [] };
+            });
+          }
 
-            // Fallback if no lessons found in backend or endpoints failed
-            if (moduleLessons.length === 0) {
-              const fallback = FALLBACK_MODULES.find(fm => fm.moduleId === m.moduleId || fm.title === m.title);
-              moduleLessons = fallback?.lessons || [];
-            }
-
-            return {
-              ...m,
-              lessons: moduleLessons
-            };
-          });
-          setModules(mapped);
+          setModules(mappedModules);
         } else {
           setModules(FALLBACK_MODULES);
         }
@@ -135,7 +153,8 @@ export default function ModulesScreen() {
         setLoading(false);
       }
     };
-    fetchModules();
+
+    fetchModulesAndLessons();
   }, []);
   // Helper to determine if a lesson is unlocked
   const isLessonUnlocked = (lessonId: number, moduleIndex: number, lessonIndex: number) => {

@@ -60,9 +60,9 @@ const MainTabNavigator = () => {
           borderTopColor: '#F3F4F6',
           elevation: 0,
           shadowOpacity: 0,
-          height: 68,
-          paddingBottom: 24,
-          paddingTop: 8,
+          height: 56,
+          paddingBottom: 8,
+          paddingTop: 6,
           backgroundColor: '#FFFFFF',
         },
         tabBarLabelStyle: {
@@ -78,15 +78,12 @@ const MainTabNavigator = () => {
     </Tab.Navigator>
   );
 };
-
 export const AppNavigator = () => {
   const { isFirstLaunch, isLoading: appLoading } = useApp();
   const { currentUser, isLoading: authLoading } = useAuth();
-
   if (appLoading || authLoading) {
     return <SplashScreen />;
   }
-
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
