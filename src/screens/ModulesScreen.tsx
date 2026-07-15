@@ -98,32 +98,28 @@ export default function ModulesScreen() {
           apiService.getAllLessons(),
         ]);
 
+
         if (fetchedModules && fetchedModules.length > 0) {
           // Sort modules by moduleOrder
           const sortedModules = [...fetchedModules].sort(
             (a, b) => (a.moduleOrder ?? 0) - (b.moduleOrder ?? 0)
           );
-
           // Distribute lessons across modules evenly by order.
           // Since the backend doesn't have a module FK on Lesson, we distribute
           // them sequentially: split all lessons into groups based on module count.
           let mappedModules: Module[];
-
           if (fetchedLessons && fetchedLessons.length > 0) {
             const totalModules = sortedModules.length;
             const lessonsPerModule = Math.ceil(fetchedLessons.length / totalModules);
-
             mappedModules = sortedModules.map((m, idx) => {
               // Try finding the matching fallback to cross-reference
               const fallback = FALLBACK_MODULES.find(
                 fm => fm.moduleId === m.moduleId || fm.title === m.title
               );
-
               // Slice lessons for this module from the sorted flat list
               const sliceStart = idx * lessonsPerModule;
               const sliceEnd = sliceStart + lessonsPerModule;
               const backendLessonsForModule = fetchedLessons.slice(sliceStart, sliceEnd);
-
               return {
                 ...m,
                 // Prefer real backend lessons; fallback to mock if slice is empty
@@ -141,7 +137,7 @@ export default function ModulesScreen() {
               return { ...m, lessons: m.lessons || fallback?.lessons || [] };
             });
           }
-
+          
           setModules(mappedModules);
         } else {
           setModules(FALLBACK_MODULES);

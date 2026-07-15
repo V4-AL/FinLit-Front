@@ -78,6 +78,7 @@ export const apiService = {
     return response.data;
   },
 
+
   // Progress endpoints
   saveProgress: async (username: string, lessonId: number, completed: boolean): Promise<UserProgress> => {
     const response = await apiClient.post<UserProgress>('/progress', {
