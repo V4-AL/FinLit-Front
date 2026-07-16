@@ -1,12 +1,13 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../contexts/AuthContext';
-import { useProgress } from '../contexts/ProgressContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContexts';
+import { useProgress } from '../contexts/ProgressContexts';
+import { useTheme } from '../contexts/ThemeContexts';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '../navigation/AppNavigator';
+import ImageSlideshow from '../components/ImageSlideshow';
 
 type NavigationProp = BottomTabNavigationProp<MainTabParamList, 'Dashboard'>;
 
@@ -71,6 +72,9 @@ export default function DashboardScreen() {
             <Text style={styles.ctaPlayText}>▶️</Text>
           </View>
         </TouchableOpacity>
+
+        {/* Image Slideshow */}
+        <ImageSlideshow />
 
         {/* Quick Stats */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Achievements</Text>
