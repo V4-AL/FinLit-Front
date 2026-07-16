@@ -1,25 +1,27 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 
 type ColorPalette = {
-    background: string;
-    surface: string;
-    border: string;
-    text: string;
-    textSecondary: string;
-    textMuted: string;
-    accent: string;
-    accentLight: string;
-    streakBadgeBg: string;
-    streakBadgeBorder: string;
-    xpBadgeBg: string;
-    xpBadgeBorder: string;
-    xpBadgeText: string;
-    switchTrackFalse: string;
-    switchTrackTrue: string;
-    logoutBg: string;
-    logoutBorder: string;
-    logoutText: string;
-    tabBar: string;
+  background: string;
+  surface: string;
+  border: string;
+  text: string;
+  textSecondary: string;
+  textMuted: string;
+  accent: string;
+  accentLight: string;
+  streakBadgeBg: string;
+  streakBadgeBorder: string;
+  xpBadgeBg: string;
+  xpBadgeBorder: string;
+  xpBadgeText: string;
+  switchTrackFalse: string;
+  switchTrackTrue: string;
+  logoutBg: string;
+  logoutBorder: string;
+  logoutText: string;
+  tabBar: string;
+  errorText: string;
+  inputBg: string;
 };
 
 const lightColors: ColorPalette = {
@@ -42,6 +44,9 @@ const lightColors: ColorPalette = {
     logoutBorder: '#FECACA',
     logoutText: '#DC2626',
     tabBar: '#FFFFFF',
+    errorText: '#DC2626',
+    inputBg: '#F9FAFB',
+    
 };
 
 const darkColors: ColorPalette = {
@@ -64,6 +69,8 @@ const darkColors: ColorPalette = {
     logoutBorder: '#7F1D1D',
     logoutText: '#F87171',
     tabBar: '#1E293B',
+    errorText: '#F87171',
+    inputBg: '#0F172A',
 };
 
 type ThemeContextType = {
