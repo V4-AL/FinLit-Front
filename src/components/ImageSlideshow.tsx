@@ -2,9 +2,9 @@ import React from 'react';
 import { StyleSheet, Image, Animated } from 'react-native';
 
 const slideshowImages = [
-    require('../../assets/feed/sarah.webp'),
-    require('../../assets/feed/istockphoto.webp'),
-    require('../../assets/feed/investment-picture.webp'),
+    require('../../assets/Feed/sarah.webp'),
+    require('../../assets/Feed/istockphoto.webp'),
+    require('../../assets/Feed/investment-picture1.webp'),
 ];
 
 const ROTATE_INTERVAL_MS = 3000;

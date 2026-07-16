@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../contexts/AuthContexts';
-import { useTheme } from '../contexts/ThemeContexts';
+import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function AuthScreen() {
   const { login, signup } = useAuth();
@@ -14,26 +14,25 @@ export default function AuthScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!email || !password || (!isLogin && !username)) {
-      setError('Please fill in all fields.');
-      return;
+const handleSubmit = async () => {
+  if (!email || !password || (!isLogin && !username)) {
+    setError('Please fill in all fields.');
+    return;
+  }
+  setError('');
+  setLoading(true);
+  try {
+    if (isLogin) {
+      await login(email, password);
+    } else {
+      await signup(email, username, password);
     }
-    setError('');
-    setLoading(true);
-    try {
-      if (isLogin) {
-        const mockUsername = username || email.split('@')[0];
-        await login(email, mockUsername);
-      } else {
-        await signup(email, username);
-      }
-    } catch (e: any) {
-      setError(e.message || 'Authentication failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (e: any) {
+    setError(e.message || 'Authentication failed. Please check your credentials.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>

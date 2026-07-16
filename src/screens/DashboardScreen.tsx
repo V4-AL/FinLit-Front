@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../contexts/AuthContexts';
-import { useProgress } from '../contexts/ProgressContexts';
-import { useTheme } from '../contexts/ThemeContexts';
+import { useAuth } from '../contexts/AuthContext';
+import { useProgress } from '../contexts/ProgressContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '../navigation/AppNavigator';
@@ -24,11 +24,11 @@ export default function DashboardScreen() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={[styles.avatarCircle, { backgroundColor: colors.accentLight }]}>
-              {(currentUser as any)?.avatarUri ? (
-                <Image source={{ uri: currentUser?.avatarUri }} style={styles.avatarImage} />
-              ) : (
-                <Text style={styles.avatarEmoji}>👤</Text>
-              )}
+              {currentUser?.avatarUri ? (
+              <Image source={{ uri: currentUser.avatarUri }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarEmoji}>👤</Text>
+            )}
             </View>
             <View>
               <Text style={[styles.greetingText, { color: colors.textSecondary }]}>Hello,</Text>

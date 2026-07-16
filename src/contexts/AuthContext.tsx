@@ -14,7 +14,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, username: string, password?: string) => Promise<void>;
   logout: () => void;
-  updateUserAvatar: (uri: string) => void;
+  updateAvatar: (uri: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,13 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(null);
   };
 
-  const updateUserAvatar = (uri: string) => {
+  const updateAvatar = async (uri: string) => {
+    // TODO: replace with your real avatar-upload endpoint
+    // const response = await apiClient.post('/user/avatar', { uri });
     setCurrentUser(prev => (prev ? { ...prev, avatarUri: uri } : prev));
-    // TODO: persist to backend, e.g. apiClient.post('/user/avatar', { uri })
   };
 
   const value = useMemo(
-    () => ({ currentUser, isLoading, login, signup, logout, updateUserAvatar }),
+    () => ({ currentUser, isLoading, login, signup, logout, updateAvatar }),
     [currentUser, isLoading]
   );
 
@@ -62,8 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }

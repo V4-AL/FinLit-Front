@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { ThemeProvider } from './ThemeContexts';
-import { AuthProvider } from './AuthContexts';
-import { ProgressProvider } from './ProgressContexts';
+import { ThemeProvider } from './ThemeContext';
+import { AuthProvider } from './AuthContext';
+import { ProgressProvider } from './ProgressContext';
 
 // --- App-level state: first launch + app-wide loading ---
 type AppContextType = {
@@ -64,6 +64,6 @@ export default function AppProviders({ children }: AppProvidersProps) {
   );
 }
 
-export { useTheme } from './ThemeContexts';
-export { useAuth } from './AuthContexts';
-export { useProgress } from './ProgressContexts';
+export { useTheme } from './ThemeContext';
+export { useAuth } from './AuthContext';
+export { useProgress } from './ProgressContext';
