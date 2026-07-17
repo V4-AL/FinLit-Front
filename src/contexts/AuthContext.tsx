@@ -24,14 +24,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const response = await apiClient.post('/auth/login', { email, password });
-      setCurrentUser(response.data.user);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  setIsLoading(true);
+  try {
+    const response = await apiClient.post('/auth/login', { email, password });
+    console.log('LOGIN RESPONSE:', JSON.stringify(response.data));
+    setCurrentUser(response.data.user);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const signup = async (email: string, username: string, password?: string) => {
     setIsLoading(true);
