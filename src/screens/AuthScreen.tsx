@@ -3,6 +3,10 @@ import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Keyboa
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { getApiErrorMessage } from '../services/api';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 6;
 
 export default function AuthScreen() {
   const { login, signup } = useAuth();
@@ -14,25 +18,35 @@ export default function AuthScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-const handleSubmit = async () => {
-  if (!email || !password || (!isLogin && !username)) {
-    setError('Please fill in all fields.');
-    return;
-  }
-  setError('');
-  setLoading(true);
-  try {
-    if (isLogin) {
-      await login(email, password);
-    } else {
-      await signup(email, username, password);
+  const handleSubmit = async () => {
+    if (!email || !password || (!isLogin && !username)) {
+      setError('Please fill in all fields.');
+      return;
     }
-  } catch (e: any) {
-    setError(e.message || 'Authentication failed. Please check your credentials.');
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!EMAIL_PATTERN.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!isLogin && password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      if (isLogin) {
+        await login(email, password);
+        // No further navigation call needed: the root layout's Stack.Protected
+        // guards switch to the (tabs) stack automatically once currentUser is set.
+      } else {
+        await signup(email, username, password);
+      }
+    } catch (e: unknown) {
+      setError(getApiErrorMessage(e, 'Authentication failed. Please check your credentials.'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -47,7 +61,15 @@ const handleSubmit = async () => {
           </View>
 
           <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            {error ? <Text style={[styles.errorText, { color: colors.errorText }]}>{error}</Text> : null}
+            {error ? (
+              <Text
+                style={[styles.errorText, { color: colors.errorText }]}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+              >
+                {error}
+              </Text>
+            ) : null}
 
             {!isLogin && (
               <View style={styles.inputContainer}>
@@ -60,6 +82,8 @@ const handleSubmit = async () => {
                   onChangeText={setUsername}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  accessibilityLabel="Username"
+                  maxLength={40}
                 />
               </View>
             )}
@@ -75,6 +99,8 @@ const handleSubmit = async () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                accessibilityLabel="Email address"
+                maxLength={254}
               />
             </View>
 
@@ -88,10 +114,19 @@ const handleSubmit = async () => {
                 onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
+                accessibilityLabel="Password"
+                maxLength={128}
               />
             </View>
 
-            <TouchableOpacity style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleSubmit} disabled={loading}>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: colors.accent }, loading ? styles.buttonLoading : null]}
+              onPress={handleSubmit}
+              disabled={loading}
+              accessibilityRole="button"
+              accessibilityLabel={isLogin ? 'Sign in' : 'Sign up'}
+              accessibilityState={{ disabled: loading, busy: loading }}
+            >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
@@ -101,7 +136,12 @@ const handleSubmit = async () => {
           </View>
 
           <View style={styles.footer}>
-            <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setError(''); }} style={styles.toggleButton}>
+            <TouchableOpacity
+              onPress={() => { setIsLogin(!isLogin); setError(''); }}
+              style={styles.toggleButton}
+              accessibilityRole="button"
+              accessibilityLabel={isLogin ? 'Switch to sign up' : 'Switch to sign in'}
+            >
               <Text style={[styles.toggleText, { color: colors.textSecondary }]}>
                 {isLogin ? "Don't have an account? " : 'Already have an account? '}
                 <Text style={[styles.toggleHighlight, { color: colors.accent }]}>{isLogin ? 'Sign Up' : 'Sign In'}</Text>
@@ -127,6 +167,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   input: { height: 52, borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 16, fontSize: 15 },
   button: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
+  buttonLoading: { opacity: 0.85 },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   footer: { alignItems: 'center', marginTop: 24 },
   toggleButton: { padding: 8 },

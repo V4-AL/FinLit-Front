@@ -4,10 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiService, Module, Lesson } from '../services/api';
 import { useProgress } from '../contexts/ProgressContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
-type NavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
+import { useRouter } from 'expo-router';
 // Fallback modules matching DataLoader json formats for premium demo resilience
 const FALLBACK_MODULES: Module[] = [
   {
@@ -87,9 +84,10 @@ const FALLBACK_MODULES: Module[] = [
 export default function ModulesScreen() {
   const { completedLessons } = useProgress();
   const { colors } = useTheme();
-  const navigation = useNavigation<NavigationProp>();
+  const router = useRouter();
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
     const fetchModulesAndLessons = async () => {
@@ -143,10 +141,12 @@ export default function ModulesScreen() {
           setModules(mappedModules);
         } else {
           setModules(FALLBACK_MODULES);
+          setUsingFallback(true);
         }
       } catch (error) {
         console.warn('Backend modules fetch failed, using local mock data', error);
         setModules(FALLBACK_MODULES);
+        setUsingFallback(true);
       } finally {
         setLoading(false);
       }
@@ -177,7 +177,7 @@ export default function ModulesScreen() {
   };
   const handleLessonClick = (lesson: Lesson, unlocked: boolean) => {
     if (unlocked) {
-      navigation.navigate('Lesson', { lessonId: lesson.id, lessonTitle: lesson.title });
+      router.push({ pathname: '/lesson/[lessonId]', params: { lessonId: String(lesson.id) } });
     }
   };
   if (loading) {
@@ -193,6 +193,13 @@ export default function ModulesScreen() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>Learning Modules</Text>
         <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Follow your personal finance roadmap</Text>
       </View>
+      {usingFallback && (
+        <View style={[styles.fallbackNotice, { backgroundColor: colors.streakBadgeBg, borderColor: colors.streakBadgeBorder }]}>
+          <Text style={[styles.fallbackNoticeText, { color: colors.xpBadgeText }]}>
+            Showing sample lessons — check your connection to sync your real progress.
+          </Text>
+        </View>
+      )}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {modules.map((mod, modIdx) => {
           const moduleLessons = mod.lessons || [];
@@ -208,7 +215,11 @@ export default function ModulesScreen() {
                 </View>
                 <Text style={[styles.moduleTitle, { color: colors.text }]}>{mod.title}</Text>
                 <Text style={[styles.moduleDescription, { color: colors.textSecondary }]}>{mod.description}</Text>
-                <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+                <View
+                  style={[styles.progressBarBg, { backgroundColor: colors.border }]}
+                  accessibilityRole="progressbar"
+                  accessibilityValue={{ min: 0, max: 100, now: Math.round(progressPercent) }}
+                >
                   <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: colors.accent }]} />
                 </View>
               </View>
@@ -216,6 +227,7 @@ export default function ModulesScreen() {
                 {moduleLessons.map((lesson, lesIdx) => {
                   const completed = completedLessons.includes(lesson.id);
                   const unlocked = isLessonUnlocked(lesson.id, modIdx, lesIdx);
+                  const statusLabel = completed ? 'Completed' : unlocked ? 'Start lesson' : 'Locked';
                   return (
                     <TouchableOpacity
                       key={lesson.id}
@@ -226,6 +238,9 @@ export default function ModulesScreen() {
                       ]}
                       onPress={() => handleLessonClick(lesson, unlocked)}
                       activeOpacity={unlocked ? 0.7 : 1}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${lesson.title}, ${lesson.duration} minutes, ${statusLabel}`}
+                      accessibilityState={{ disabled: !unlocked }}
                     >
                       <View style={[
                         styles.indicatorCircle,
@@ -235,7 +250,7 @@ export default function ModulesScreen() {
                           ? { backgroundColor: colors.border }
                           : { backgroundColor: colors.accentLight, borderWidth: 1.5, borderColor: colors.accent }
                       ]}>
-                        <Text style={[styles.indicatorText, { color: colors.accent }]}>
+                        <Text style={[styles.indicatorText, { color: colors.accent }]} accessible={false}>
                           {completed ? '✓' : !unlocked ? '🔒' : lesIdx + 1}
                         </Text>
                       </View>
@@ -264,6 +279,8 @@ export default function ModulesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  fallbackNotice: { marginHorizontal: 24, marginTop: 16, borderRadius: 12, borderWidth: 1, paddingVertical: 10, paddingHorizontal: 14 },
+  fallbackNoticeText: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
   header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16, borderBottomWidth: 1 },
   headerTitle: { fontSize: 24, fontWeight: '800' },
   headerSubtitle: { fontSize: 14, marginTop: 4, fontWeight: '500' },

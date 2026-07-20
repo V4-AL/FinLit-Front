@@ -48,19 +48,28 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={completeOnboarding} style={styles.skipButton}>
+        <TouchableOpacity
+          onPress={completeOnboarding}
+          style={styles.skipButton}
+          accessibilityRole="button"
+          accessibilityLabel="Skip onboarding"
+        >
           <Text style={[styles.skipText, { color: colors.textMuted }]}>Skip</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.slideContainer}>
-        <Text style={styles.illustration}>{activeSlide.illustration}</Text>
+      <View style={styles.slideContainer} accessibilityLiveRegion="polite">
+        <Text style={styles.illustration} accessible={false}>{activeSlide.illustration}</Text>
         <Text style={[styles.title, { color: colors.text }]}>{activeSlide.title}</Text>
         <Text style={[styles.description, { color: colors.textSecondary }]}>{activeSlide.description}</Text>
       </View>
 
       <View style={styles.footer}>
-        <View style={styles.pagination}>
+        <View
+          style={styles.pagination}
+          accessibilityRole="text"
+          accessibilityLabel={`Slide ${currentSlide + 1} of ${slides.length}`}
+        >
           {slides.map((_, index) => (
             <View
               key={index}
@@ -73,7 +82,12 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        <TouchableOpacity style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleNext}>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: colors.accent }]}
+          onPress={handleNext}
+          accessibilityRole="button"
+          accessibilityLabel={currentSlide === slides.length - 1 ? 'Start learning' : 'Continue'}
+        >
           <Text style={styles.buttonText}>
             {currentSlide === slides.length - 1 ? 'Start Learning' : 'Continue'}
           </Text>

@@ -1,22 +1,27 @@
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, Animated, ActivityIndicator } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 export default function SplashScreen() {
   const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.loop(
+    if (reducedMotion) return;
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1.15, duration: 1200, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 1.0, duration: 1200, useNativeDriver: true }),
       ])
-    ).start();
-  }, [pulseAnim]);
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseAnim, reducedMotion]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]} accessibilityLabel="Loading finlit" accessibilityRole="progressbar">
       <Animated.View style={[styles.logoContainer, { backgroundColor: colors.accentLight, transform: [{ scale: pulseAnim }] }]}>
         <Text style={styles.logoText}>🪙</Text>
       </Animated.View>

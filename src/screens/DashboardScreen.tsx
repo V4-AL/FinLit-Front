@@ -4,18 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useProgress } from '../contexts/ProgressContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { MainTabParamList } from '../navigation/AppNavigator';
+import { useRouter } from 'expo-router';
 import ImageSlideshow from '../components/ImageSlideshow';
-
-type NavigationProp = BottomTabNavigationProp<MainTabParamList, 'Dashboard'>;
 
 export default function DashboardScreen() {
   const { currentUser } = useAuth();
   const { xp, streak, level, levelProgress, completedLessons } = useProgress();
   const { colors } = useTheme();
-  const navigation = useNavigation<NavigationProp>();
+  const router = useRouter();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -23,11 +19,11 @@ export default function DashboardScreen() {
         {/* Top Header Row */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <View style={[styles.avatarCircle, { backgroundColor: colors.accentLight }]}>
+            <View style={[styles.avatarCircle, { backgroundColor: colors.accentLight }]} accessibilityLabel={`${currentUser?.username || 'Learner'}'s profile photo`}>
               {currentUser?.avatarUri ? (
-              <Image source={{ uri: currentUser.avatarUri }} style={styles.avatarImage} />
+              <Image source={{ uri: currentUser.avatarUri }} style={styles.avatarImage} accessible={false} />
             ) : (
-              <Text style={styles.avatarEmoji}>👤</Text>
+              <Text style={styles.avatarEmoji} accessible={false}>👤</Text>
             )}
             </View>
             <View>
@@ -36,19 +32,29 @@ export default function DashboardScreen() {
             </View>
           </View>
           <View style={styles.statsBadges}>
-            <View style={[styles.badgeStreak, { backgroundColor: colors.streakBadgeBg, borderColor: colors.streakBadgeBorder }]}>
-              <Text style={styles.badgeEmoji}>🔥</Text>
+            <View
+              style={[styles.badgeStreak, { backgroundColor: colors.streakBadgeBg, borderColor: colors.streakBadgeBorder }]}
+              accessibilityLabel={`${streak} day streak`}
+            >
+              <Text style={styles.badgeEmoji} accessible={false}>🔥</Text>
               <Text style={[styles.badgeText, { color: colors.xpBadgeText }]}>{streak}</Text>
             </View>
-            <View style={[styles.badgeXp, { backgroundColor: colors.xpBadgeBg, borderColor: colors.xpBadgeBorder }]}>
-              <Text style={styles.badgeEmoji}>⭐</Text>
+            <View
+              style={[styles.badgeXp, { backgroundColor: colors.xpBadgeBg, borderColor: colors.xpBadgeBorder }]}
+              accessibilityLabel={`${xp} experience points`}
+            >
+              <Text style={styles.badgeEmoji} accessible={false}>⭐</Text>
               <Text style={[styles.badgeText, { color: colors.xpBadgeText }]}>{xp} XP</Text>
             </View>
           </View>
         </View>
 
         {/* Level & Progress Card */}
-        <View style={[styles.progressCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View
+          style={[styles.progressCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          accessibilityRole="progressbar"
+          accessibilityValue={{ min: 0, max: 100, now: levelProgress }}
+        >
           <View style={styles.progressHeader}>
             <Text style={[styles.levelTitle, { color: colors.text }]}>Level {level}</Text>
             <Text style={[styles.progressFraction, { color: colors.textSecondary }]}>{levelProgress} / 100 XP</Text>
@@ -62,7 +68,13 @@ export default function DashboardScreen() {
         </View>
 
         {/* CTA */}
-        <TouchableOpacity style={[styles.ctaCard, { backgroundColor: colors.accent }]} onPress={() => navigation.navigate('Modules')} activeOpacity={0.9}>
+        <TouchableOpacity
+          style={[styles.ctaCard, { backgroundColor: colors.accent }]}
+          onPress={() => router.push('/modules')}
+          activeOpacity={0.9}
+          accessibilityRole="button"
+          accessibilityLabel="Continue learning: expand your financial knowledge with the next lesson"
+        >
           <View style={styles.ctaTextContainer}>
             <Text style={styles.ctaTag}>RECOMMENDED</Text>
             <Text style={styles.ctaTitle}>Continue Learning</Text>
@@ -84,8 +96,12 @@ export default function DashboardScreen() {
             { emoji: '🏆', val: level, label: 'Current Level' },
             { emoji: '⚡', val: xp, label: 'Total XP' },
           ].map(stat => (
-            <View key={stat.label} style={[styles.statBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={styles.statEmoji}>{stat.emoji}</Text>
+            <View
+              key={stat.label}
+              style={[styles.statBox, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              accessibilityLabel={`${stat.val} ${stat.label}`}
+            >
+              <Text style={styles.statEmoji} accessible={false}>{stat.emoji}</Text>
               <Text style={[styles.statVal, { color: colors.text }]}>{stat.val}</Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{stat.label}</Text>
             </View>

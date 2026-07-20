@@ -50,12 +50,19 @@ export default function SettingsScreen() {
       <View style={styles.content}>
         {/* Profile Info Card */}
         <View style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <TouchableOpacity onPress={handlePickAvatar} activeOpacity={0.7} disabled={uploading}>
+          <TouchableOpacity
+            onPress={handlePickAvatar}
+            activeOpacity={0.7}
+            disabled={uploading}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+            accessibilityState={{ disabled: uploading, busy: uploading }}
+          >
             <View style={[styles.avatarCircle, { backgroundColor: colors.accentLight }]}>
               {currentUser?.avatarUri ? (
-                <Image source={{ uri: currentUser.avatarUri }} style={styles.avatarImage} />
+                <Image source={{ uri: currentUser.avatarUri }} style={styles.avatarImage} accessible={false} />
               ) : (
-                <Text style={styles.avatarEmoji}>👤</Text>
+                <Text style={styles.avatarEmoji} accessible={false}>👤</Text>
               )}
               <View style={[styles.editBadge, { backgroundColor: colors.accent, borderColor: colors.surface }]}>
                 <Text style={styles.editBadgeText}>{uploading ? '…' : '✎'}</Text>
@@ -84,6 +91,9 @@ export default function SettingsScreen() {
               style={[styles.themeToggleBtn, { backgroundColor: isDark ? colors.accent : colors.border }]}
               onPress={toggleTheme}
               activeOpacity={0.8}
+              accessibilityRole="switch"
+              accessibilityLabel="Dark mode"
+              accessibilityState={{ checked: isDark }}
             >
               <View style={[styles.themeToggleThumb, { transform: [{ translateX: isDark ? 22 : 2 }] }]} />
             </TouchableOpacity>
@@ -95,7 +105,7 @@ export default function SettingsScreen() {
         <View style={[styles.optionsList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.optionRow}>
             <View style={styles.optionLabelGroup}>
-              <Text style={styles.optionEmoji}>🔊</Text>
+              <Text style={styles.optionEmoji} accessible={false}>🔊</Text>
               <Text style={[styles.optionLabel, { color: colors.text }]}>Sound Effects</Text>
             </View>
             <Switch
@@ -103,6 +113,7 @@ export default function SettingsScreen() {
               onValueChange={setSoundEnabled}
               trackColor={{ false: colors.switchTrackFalse, true: colors.switchTrackTrue }}
               thumbColor={soundEnabled ? colors.accent : '#F3F4F6'}
+              accessibilityLabel="Sound effects"
             />
           </View>
 
@@ -110,7 +121,7 @@ export default function SettingsScreen() {
 
           <View style={styles.optionRow}>
             <View style={styles.optionLabelGroup}>
-              <Text style={styles.optionEmoji}>🔔</Text>
+              <Text style={styles.optionEmoji} accessible={false}>🔔</Text>
               <Text style={[styles.optionLabel, { color: colors.text }]}>Daily Reminders</Text>
             </View>
             <Switch
@@ -118,6 +129,7 @@ export default function SettingsScreen() {
               onValueChange={setRemindersEnabled}
               trackColor={{ false: colors.switchTrackFalse, true: colors.switchTrackTrue }}
               thumbColor={remindersEnabled ? colors.accent : '#F3F4F6'}
+              accessibilityLabel="Daily reminders"
             />
           </View>
         </View>
@@ -127,6 +139,8 @@ export default function SettingsScreen() {
           style={[styles.logoutButton, { backgroundColor: colors.logoutBg, borderColor: colors.logoutBorder }]}
           onPress={logout}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
         >
           <Text style={[styles.logoutButtonText, { color: colors.logoutText }]}>Sign Out</Text>
         </TouchableOpacity>

@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-19T00:00:00Z",
+  "title": "Design System: finlit",
+  "extensions": {
+    "colorMeta": {
+      "background": { "role": "neutral", "displayName": "Cloud Background", "canonical": "#F9FAFB", "tonalRamp": ["#0F172A", "#1E293B", "#334155", "#475569", "#64748B", "#94A3B8", "#E2E8F0", "#F9FAFB"] },
+      "surface": { "role": "neutral", "displayName": "Surface White", "canonical": "#FFFFFF", "tonalRamp": ["#0F172A", "#1E293B", "#334155", "#64748B", "#94A3B8", "#CBD5E1", "#F1F5F9", "#FFFFFF"] },
+      "border": { "role": "neutral", "displayName": "Hairline Border", "canonical": "#E5E7EB", "tonalRamp": ["#111827", "#1F2937", "#374151", "#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#111827", "tonalRamp": ["#030712", "#111827", "#1F2937", "#374151", "#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB"] },
+      "ink-secondary": { "role": "neutral", "displayName": "Ink Secondary", "canonical": "#6B7280", "tonalRamp": ["#111827", "#1F2937", "#374151", "#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB", "#F3F4F6"] },
+      "ink-muted": { "role": "neutral", "displayName": "Ink Muted", "canonical": "#9CA3AF", "tonalRamp": ["#1F2937", "#374151", "#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#F3F4F6"] },
+      "growth-emerald": { "role": "primary", "displayName": "Growth Emerald", "canonical": "#10B981", "tonalRamp": ["#022C22", "#064E3B", "#065F46", "#047857", "#059669", "#10B981", "#34D399", "#6EE7B7"] },
+      "growth-emerald-light": { "role": "primary", "displayName": "Growth Emerald Light", "canonical": "#D1FAE5", "tonalRamp": ["#064E3B", "#065F46", "#047857", "#059669", "#10B981", "#6EE7B7", "#A7F3D0", "#D1FAE5"] },
+      "growth-emerald-dark": { "role": "primary", "displayName": "Growth Emerald Dark", "canonical": "#047857", "tonalRamp": ["#022C22", "#064E3B", "#065F46", "#047857", "#059669", "#10B981", "#34D399", "#6EE7B7"] },
+      "streak-amber-bg": { "role": "state", "displayName": "Streak Amber", "canonical": "#FEF3C7", "tonalRamp": ["#451A03", "#78350F", "#92400E", "#B45309", "#D97706", "#F59E0B", "#FCD34D", "#FEF3C7"] },
+      "streak-amber-border": { "role": "state", "displayName": "Streak Amber Border", "canonical": "#FDE68A", "tonalRamp": ["#78350F", "#92400E", "#B45309", "#D97706", "#F59E0B", "#FBBF24", "#FCD34D", "#FDE68A"] },
+      "xp-mint-bg": { "role": "state", "displayName": "XP Mint", "canonical": "#ECFDF5", "tonalRamp": ["#064E3B", "#065F46", "#047857", "#059669", "#10B981", "#6EE7B7", "#A7F3D0", "#ECFDF5"] },
+      "xp-mint-border": { "role": "state", "displayName": "XP Mint Border", "canonical": "#A7F3D0", "tonalRamp": ["#065F46", "#047857", "#059669", "#10B981", "#34D399", "#6EE7B7", "#A7F3D0", "#D1FAE5"] },
+      "danger-bg": { "role": "state", "displayName": "Danger Red", "canonical": "#FEF2F2", "tonalRamp": ["#450A0A", "#7F1D1D", "#991B1B", "#B91C1C", "#DC2626", "#EF4444", "#FCA5A5", "#FEF2F2"] },
+      "danger-border": { "role": "state", "displayName": "Danger Red Border", "canonical": "#FECACA", "tonalRamp": ["#7F1D1D", "#991B1B", "#B91C1C", "#DC2626", "#EF4444", "#F87171", "#FCA5A5", "#FEE2E2"] },
+      "danger-text": { "role": "state", "displayName": "Danger Red Text", "canonical": "#DC2626", "tonalRamp": ["#450A0A", "#7F1D1D", "#991B1B", "#B91C1C", "#DC2626", "#EF4444", "#F87171", "#FCA5A5"] },
+      "quiz-select-blue": { "role": "state", "displayName": "Quiz Select Blue", "canonical": "#3B82F6", "tonalRamp": ["#172554", "#1E3A8A", "#1D4ED8", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE"] },
+      "quiz-select-blue-bg": { "role": "state", "displayName": "Quiz Select Blue Background", "canonical": "#EFF6FF", "tonalRamp": ["#1D4ED8", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE", "#DBEAFE", "#EFF6FF"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The finlit wordmark on the splash screen only." },
+      "headline": { "displayName": "Headline", "purpose": "Screen-level titles: Welcome Back, Learning Modules, Settings, dashboard greeting." },
+      "title": { "displayName": "Title", "purpose": "Card-level titles: module title, quiz question, Level N." },
+      "body": { "displayName": "Body", "purpose": "Descriptions, lesson text, form labels, button labels." },
+      "label": { "displayName": "Label", "purpose": "Uppercase tracked tags: module numbers, section headers, quiz tag." }
+    },
+    "shadows": [
+      { "name": "ambient-brand-glow", "value": "shadowColor: #10B981; shadowOffset: 0 8; shadowOpacity: 0.15; shadowRadius: 15; elevation: 4", "purpose": "Splash-screen logo only — signals \"alive\" during the loading pulse." },
+      { "name": "toggle-thumb-lift", "value": "shadowColor: #000; shadowOffset: 0 1; shadowOpacity: 0.2; shadowRadius: 2; elevation: 2", "purpose": "The physical nub inside the dark-mode toggle switch only." }
+    ],
+    "motion": [
+      { "name": "streak-splash-pulse", "value": "Animated.timing, 1200ms in/out, scale 1.0 → 1.15, looped", "purpose": "Splash-screen logo idle pulse while auth/app state loads." },
+      { "name": "xp-award-spring", "value": "Animated.spring, tension 50, friction 6", "purpose": "XP badge pop-in on the lesson-complete screen." },
+      { "name": "slideshow-crossfade", "value": "Animated.timing, 300ms out then 300ms in, opacity 1 → 0 → 1", "purpose": "Dashboard image slideshow rotation, every 3000ms." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary action on a screen: sign in/up, continue lesson, continue onboarding.",
+      "html": "<button class=\"ds-btn-primary\">Continue</button>",
+      "css": ".ds-btn-primary { background: #10B981; color: #FFFFFF; height: 52px; padding: 0 24px; border-radius: 16px; border: none; font-size: 16px; font-weight: 700; transition: opacity 0.15s ease-out; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid #047857; outline-offset: 2px; } .ds-btn-primary:disabled { background: #E5E7EB; color: #9CA3AF; }"
+    },
+    {
+      "name": "Card Surface",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Base card used for the dashboard progress card, auth form, and profile card.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Level 4</div><div class=\"ds-card-body\">40 / 100 XP</div></div>",
+      "css": ".ds-card { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 24px; padding: 24px; } .ds-card-title { font-size: 18px; font-weight: 800; color: #111827; margin-bottom: 8px; } .ds-card-body { font-size: 14px; font-weight: 600; color: #6B7280; }"
+    },
+    {
+      "name": "XP Badge Pill",
+      "kind": "chip",
+      "refersTo": "badge-pill",
+      "description": "Rounded stat pill used for XP and streak counts in the dashboard header.",
+      "html": "<span class=\"ds-badge\">⭐ 120 XP</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; font-size: 13px; font-weight: 700; padding: 8px 12px; border-radius: 999px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Auth-screen field with an uppercase tracked label above it rather than an inline placeholder-only pattern.",
+      "html": "<label class=\"ds-field-label\">Email Address</label><input class=\"ds-input\" placeholder=\"e.g. you@example.com\" />",
+      "css": ".ds-field-label { display: block; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; margin-bottom: 8px; } .ds-input { width: 100%; height: 52px; background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 14px; padding: 0 16px; font-size: 15px; color: #111827; } .ds-input::placeholder { color: #9CA3AF; } .ds-input:focus-visible { outline: 2px solid #10B981; outline-offset: 1px; border-color: #10B981; }"
+    },
+    {
+      "name": "Quiz Option",
+      "kind": "custom",
+      "refersTo": "quiz-option",
+      "description": "Selectable quiz answer row with three feedback states (selected/blue, correct/emerald, wrong/red) layered on the same flat-bordered base shape.",
+      "html": "<button class=\"ds-quiz-option ds-quiz-option--selected\">To map out and control your cash flow</button>",
+      "css": ".ds-quiz-option { display: block; width: 100%; text-align: left; background: #FFFFFF; border: 2px solid #E5E7EB; border-radius: 16px; padding: 18px 20px; font-size: 16px; font-weight: 700; color: #4B5563; transition: border-color 0.15s ease-out, background 0.15s ease-out; } .ds-quiz-option--selected { border-color: #3B82F6; background: #EFF6FF; color: #1D4ED8; } .ds-quiz-option--correct { border-color: #10B981; background: #ECFDF5; color: #1F2937; } .ds-quiz-option--wrong { border-color: #EF4444; background: #FEF2F2; color: #1F2937; }"
+    },
+    {
+      "name": "Progress Bar",
+      "kind": "custom",
+      "refersTo": "progress-bar",
+      "description": "The single most-repeated component: level progress, module progress, and lesson-slide progress all use this same track+fill shape.",
+      "html": "<div class=\"ds-progress-track\"><div class=\"ds-progress-fill\" style=\"width: 65%\"></div></div>",
+      "css": ".ds-progress-track { height: 12px; background: #E5E7EB; border-radius: 6px; overflow: hidden; } .ds-progress-fill { height: 100%; background: #10B981; border-radius: 6px; transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1); }"
+    },
+    {
+      "name": "Bottom Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "Flat bottom navigation with emoji icons, zero shadow, and a single top hairline border.",
+      "html": "<nav class=\"ds-tabbar\"><span class=\"ds-tab ds-tab--active\">🏠<br/>Dashboard</span><span class=\"ds-tab\">📚<br/>Modules</span><span class=\"ds-tab\">⚙️<br/>Settings</span></nav>",
+      "css": ".ds-tabbar { display: flex; justify-content: space-around; align-items: center; height: 56px; padding-top: 6px; padding-bottom: 8px; background: #FFFFFF; border-top: 1px solid #E5E7EB; box-shadow: none; } .ds-tab { font-size: 12px; font-weight: 600; text-align: center; color: #9CA3AF; } .ds-tab--active { color: #10B981; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Trusted Playground",
+    "overview": "finlit's whole visual system sits on a deliberate tension: the mechanics are pure playground — streaks, XP, levels, a lesson that ends in a trophy emoji and a spring-animated badge — but the shell around them is calm, bordered, and quiet. Nothing about the surface shouts. Cards are flat with a hairline border rather than a shadow; type leans heavy (700-800 weight) for confidence rather than loud for attention; the one saturated color in the whole system is a single emerald green that means \"growth\" everywhere it appears. That restraint is what lets the game-like parts read as credible instead of gimmicky — this is still an app about someone's money. This system explicitly rejects the stuffy-bank-app look (no navy-and-gold, no dense tables, no cold institutional distance) and the generic-AI-dashboard look (no cream/gray card grids, no decorative gradients). Warmth comes from color use, rounded shapes, and copy tone — not from a tinted neutral background pretending to be \"friendly.\"",
+    "keyCharacteristics": [
+      "Flat surfaces, hairline borders — depth is a border and a background shift, not a shadow.",
+      "One accent, many jobs: Growth Emerald marks progress, success, active state, and the one primary action per screen.",
+      "Heavy type weight (700-800) does the hierarchy work; size varies less than weight does.",
+      "Generous, consistent roundness (14-24px on containers, full-round on pills/avatars) — nothing sharp-cornered.",
+      "Emoji as illustration. There is no icon library in use; emoji carry all iconography and decorative imagery."
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Growth Emerald is the only saturated color allowed to represent a positive/active state. Don't introduce a second \"brand\" color; every other hue in the system exists to mark one specific, narrow state (streak = amber, danger = red, quiz-selected = blue) and appears nowhere else.", "section": "colors" },
+      { "name": "The Weight-Over-Size Rule", "body": "When something needs to feel more important, make it heavier (600 → 700 → 800), not bigger. The type scale only spans 12-32px across the entire app; 800-weight at 15px (a button) reads as confident, not small.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "If you're reaching for a shadow anywhere other than the ambient brand glow or the toggle thumb, use a border and a surface-color shift instead. Shadow in this system means \"this is a physical toggle\" or \"this is the brand mark,\" not \"this is elevated content.\"", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Growth Emerald (#10B981) as the only accent carrying meaning — progress, success, active state, primary action.",
+      "Do build hierarchy with font-weight (500→800) before reaching for a bigger size.",
+      "Do keep cards and rows flat with a 1-1.5px Hairline Border; reserve shadow for the two named exceptions (splash glow, toggle thumb).",
+      "Do pair every state color with both a background tint and a matching border — never a bare-border accent.",
+      "Do keep every screen consuming useTheme() tokens so light/dark mode stays correct app-wide."
+    ],
+    "donts": [
+      "Don't design anything that reads as \"a stuffy corporate bank app\" — no navy-and-gold, no dense data tables, no cold institutional distance.",
+      "Don't add a second saturated \"brand\" accent alongside Growth Emerald — every other hue in this system is scoped to one narrow state and nothing else.",
+      "Don't use border-left/border-right as a colored accent stripe anywhere.",
+      "Don't hardcode hex colors in a screen file — every screen (including LessonScreen, migrated to theme tokens) pulls color from useTheme().colors so dark mode stays correct everywhere.",
+      "Don't add drop shadows to cards or buttons \"for depth\" — flat + border is the system's answer to depth, not shadow."
+    ]
+  }
+}

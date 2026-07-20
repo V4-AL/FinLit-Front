@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { apiService, Lesson } from '../services/api';
 import { useProgress } from '../contexts/ProgressContext';
-type LessonScreenRouteProp = RouteProp<RootStackParamList, 'Lesson'>;
+import { useTheme } from '../contexts/ThemeContext';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 interface ContentBlock {
   type: 'text' | 'quiz';
   value?: string;
@@ -15,21 +14,25 @@ interface ContentBlock {
   answer?: number;
 }
 export default function LessonScreen() {
-  const route = useRoute<LessonScreenRouteProp>();
-  const navigation = useNavigation();
-  const { lessonId, lessonTitle } = route.params;
+  const router = useRouter();
+  const { lessonId: lessonIdParam } = useLocalSearchParams<{ lessonId: string }>();
+  const lessonId = Number(lessonIdParam);
   const { completeLesson } = useProgress();
+  const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slides, setSlides] = useState<ContentBlock[]>([]);
-  
+
   // Quiz State
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswerChecked, setIsAnswerChecked] = useState(false);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
   // Lesson complete transition state
   const [isFinished, setIsFinished] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const isAdvancing = useRef(false);
   // XP Anim
   const xpScaleAnim = useState(new Animated.Value(0))[0];
   useEffect(() => {
@@ -37,7 +40,7 @@ export default function LessonScreen() {
       try {
         const fetched = await apiService.getLesson(lessonId);
         setLesson(fetched);
-        
+
         // Parse content blocks
         if (fetched.content) {
           try {
@@ -86,10 +89,11 @@ export default function LessonScreen() {
   const activeSlide = slides[currentSlide];
   const progressPercent = slides.length > 0 ? ((currentSlide + (isFinished ? 1 : 0)) / slides.length) * 100 : 0;
   const handleContinue = async () => {
+    if (isAdvancing.current) return; // guard against rapid double-taps
     if (activeSlide.type === 'quiz' && !isAnswerChecked) {
       // Check answer
       if (selectedOption === null) return;
-      
+
       const correct = selectedOption === activeSlide.answer;
       setIsAnswerCorrect(correct);
       setIsAnswerChecked(true);
@@ -103,44 +107,64 @@ export default function LessonScreen() {
     }
     // Go to next slide or finish
     if (currentSlide < slides.length - 1) {
+      isAdvancing.current = true;
       setCurrentSlide(currentSlide + 1);
       setSelectedOption(null);
       setIsAnswerChecked(false);
+      isAdvancing.current = false;
     } else {
       // Complete lesson & play visual XP animation
+      isAdvancing.current = true;
+      setCompleting(true);
       setIsFinished(true);
-      await completeLesson(lessonId);
-      
-      Animated.spring(xpScaleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 6,
-        useNativeDriver: true,
-      }).start();
+      try {
+        await completeLesson(lessonId);
+      } finally {
+        setCompleting(false);
+      }
+
+      if (reducedMotion) {
+        xpScaleAnim.setValue(1);
+      } else {
+        Animated.spring(xpScaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 6,
+          useNativeDriver: true,
+        }).start();
+      }
     }
   };
   const handleQuit = () => {
-    navigation.goBack();
+    router.back();
   };
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#10B981" />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
   // Completion screen layout
   if (isFinished) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.finishContainer}>
           <Text style={styles.cupEmoji}>🏆</Text>
-          <Text style={styles.finishTitle}>Lesson Complete!</Text>
-          <Text style={styles.finishSubtitle}>You are one step closer to financial freedom.</Text>
-          <Animated.View style={[styles.xpBadge, { transform: [{ scale: xpScaleAnim }] }]}>
-            <Text style={styles.xpText}>⭐ +10 XP</Text>
+          <Text style={[styles.finishTitle, { color: colors.text }]}>Lesson Complete!</Text>
+          <Text style={[styles.finishSubtitle, { color: colors.textSecondary }]}>You are one step closer to financial freedom.</Text>
+          <Animated.View
+            style={[styles.xpBadge, { backgroundColor: colors.streakBadgeBg, borderColor: colors.streakBadgeBorder, transform: [{ scale: xpScaleAnim }] }]}
+            accessibilityLabel="You earned 10 experience points"
+          >
+            <Text style={[styles.xpText, { color: colors.xpBadgeText }]}>⭐ +10 XP</Text>
           </Animated.View>
-          <TouchableOpacity style={styles.finishButton} onPress={handleQuit}>
+          <TouchableOpacity
+            style={[styles.finishButton, { backgroundColor: colors.accent }]}
+            onPress={handleQuit}
+            accessibilityRole="button"
+            accessibilityLabel="Return to your learning journey"
+          >
             <Text style={styles.finishButtonText}>Return to Journey</Text>
           </TouchableOpacity>
         </View>
@@ -148,15 +172,24 @@ export default function LessonScreen() {
     );
   }
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Top Header & Progress Bar */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleQuit} style={styles.closeButton}>
-          <Text style={styles.closeButtonText}>✕</Text>
+        <TouchableOpacity
+          onPress={handleQuit}
+          style={styles.closeButton}
+          accessibilityRole="button"
+          accessibilityLabel="Close lesson"
+        >
+          <Text style={[styles.closeButtonText, { color: colors.textMuted }]}>✕</Text>
         </TouchableOpacity>
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+        <View
+          style={styles.progressContainer}
+          accessibilityRole="progressbar"
+          accessibilityValue={{ min: 0, max: 100, now: Math.round(progressPercent) }}
+        >
+          <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+            <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: colors.accent }]} />
           </View>
         </View>
       </View>
@@ -165,35 +198,41 @@ export default function LessonScreen() {
         {activeSlide.type === 'text' ? (
           <View style={styles.textSlide}>
             <Text style={styles.slideIcon}>📖</Text>
-            <Text style={styles.textContent}>{activeSlide.value}</Text>
+            <Text style={[styles.textContent, { color: colors.text }]}>{activeSlide.value}</Text>
           </View>
         ) : (
           <View style={styles.quizSlide}>
-            <Text style={styles.quizTag}>QUIZ CHALLENGE</Text>
-            <Text style={styles.quizQuestion}>{activeSlide.question}</Text>
-            
+            <Text style={[styles.quizTag, { color: colors.accent }]}>QUIZ CHALLENGE</Text>
+            <Text style={[styles.quizQuestion, { color: colors.text }]}>{activeSlide.question}</Text>
+
             <View style={styles.optionsList}>
               {activeSlide.options?.map((option, index) => {
                 const isSelected = selectedOption === index;
                 const showCorrect = isAnswerChecked && index === activeSlide.answer;
                 const showWrong = isAnswerChecked && isSelected && !isAnswerCorrect;
+                const optionColors = showCorrect
+                  ? { borderColor: colors.accent, backgroundColor: colors.accentLight }
+                  : showWrong
+                  ? { borderColor: colors.logoutText, backgroundColor: colors.logoutBg }
+                  : isSelected
+                  ? { borderColor: colors.quizSelectBorder, backgroundColor: colors.quizSelectBg }
+                  : { borderColor: colors.border, backgroundColor: colors.surface };
+                const textColor = isSelected
+                  ? colors.quizSelectText
+                  : showCorrect || showWrong
+                  ? colors.text
+                  : colors.textSecondary;
                 return (
                   <TouchableOpacity
                     key={index}
-                    style={[
-                      styles.optionButton,
-                      isSelected ? styles.optionSelected : null,
-                      showCorrect ? styles.optionCorrect : null,
-                      showWrong ? styles.optionWrong : null,
-                    ]}
+                    style={[styles.optionButton, optionColors]}
                     onPress={() => !isAnswerChecked && setSelectedOption(index)}
                     activeOpacity={isAnswerChecked ? 1 : 0.7}
+                    accessibilityRole="radio"
+                    accessibilityLabel={option}
+                    accessibilityState={{ selected: isSelected, disabled: isAnswerChecked }}
                   >
-                    <Text style={[
-                      styles.optionText,
-                      isSelected ? styles.optionTextSelected : null,
-                      showCorrect || showWrong ? styles.optionTextState : null
-                    ]}>
+                    <Text style={[styles.optionText, { color: textColor }]}>
                       {option}
                     </Text>
                   </TouchableOpacity>
@@ -206,19 +245,17 @@ export default function LessonScreen() {
       {/* Bottom Actions Banner */}
       <View style={[
         styles.actionFooter,
-        isAnswerChecked ? (isAnswerCorrect ? styles.footerCorrect : styles.footerWrong) : null
+        { borderTopColor: colors.border },
+        isAnswerChecked ? (isAnswerCorrect ? { backgroundColor: colors.accentLight, borderColor: colors.streakBadgeBorder } : { backgroundColor: colors.logoutBg, borderColor: colors.logoutBorder }) : null,
       ]}>
         {isAnswerChecked && (
-          <View style={styles.feedbackTextContainer}>
-            <Text style={[
-              styles.feedbackTitle,
-              isAnswerCorrect ? styles.feedbackCorrectText : styles.feedbackWrongText
-            ]}>
+          <View style={styles.feedbackTextContainer} accessibilityLiveRegion="polite">
+            <Text style={[styles.feedbackTitle, { color: isAnswerCorrect ? colors.accentDark : colors.logoutText }]}>
               {isAnswerCorrect ? '🎉 Correct!' : '❌ Incorrect'}
             </Text>
-            <Text style={styles.feedbackDescription}>
-              {isAnswerCorrect 
-                ? 'Awesome job! Keep compounding your knowledge.' 
+            <Text style={[styles.feedbackDescription, { color: colors.textSecondary }]}>
+              {isAnswerCorrect
+                ? 'Awesome job! Keep compounding your knowledge.'
                 : 'Double check the choices and try again!'}
             </Text>
           </View>
@@ -226,20 +263,29 @@ export default function LessonScreen() {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            activeSlide.type === 'quiz' && selectedOption === null ? styles.buttonDisabled : null,
-            isAnswerChecked ? (isAnswerCorrect ? styles.buttonCorrect : styles.buttonWrong) : null
+            { backgroundColor: colors.accent },
+            activeSlide.type === 'quiz' && selectedOption === null ? { backgroundColor: colors.border } : null,
+            isAnswerChecked && !isAnswerCorrect ? { backgroundColor: colors.logoutText } : null,
           ]}
           onPress={handleContinue}
-          disabled={activeSlide.type === 'quiz' && selectedOption === null}
+          disabled={(activeSlide.type === 'quiz' && selectedOption === null) || completing}
+          accessibilityRole="button"
+          accessibilityLabel={
+            activeSlide.type === 'quiz'
+              ? (!isAnswerChecked ? 'Check answer' : (isAnswerCorrect ? 'Continue' : 'Try again'))
+              : 'Continue'
+          }
+          accessibilityState={{ disabled: (activeSlide.type === 'quiz' && selectedOption === null) || completing, busy: completing }}
         >
-          <Text style={[
-            styles.continueButtonText,
-            isAnswerChecked && isAnswerCorrect ? styles.buttonTextCorrect : null
-          ]}>
-            {activeSlide.type === 'quiz' 
-              ? (!isAnswerChecked ? 'Check Answer' : (isAnswerCorrect ? 'Continue' : 'Try Again'))
-              : 'Continue'}
-          </Text>
+          {completing ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.continueButtonText}>
+              {activeSlide.type === 'quiz'
+                ? (!isAnswerChecked ? 'Check Answer' : (isAnswerCorrect ? 'Continue' : 'Try Again'))
+                : 'Continue'}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -248,7 +294,6 @@ export default function LessonScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   loadingContainer: {
     flex: 1,
@@ -269,20 +314,17 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#9CA3AF',
   },
   progressContainer: {
     flex: 1,
   },
   progressBarBg: {
     height: 14,
-    backgroundColor: '#E5E7EB',
     borderRadius: 7,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#10B981',
     borderRadius: 7,
   },
   contentCard: {
@@ -300,7 +342,6 @@ const styles = StyleSheet.create({
   textContent: {
     fontSize: 20,
     lineHeight: 30,
-    color: '#1F2937',
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -308,7 +349,6 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
   },
   quizTag: {
-    color: '#10B981',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
@@ -318,7 +358,6 @@ const styles = StyleSheet.create({
   quizQuestion: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#1F2937',
     marginBottom: 32,
     textAlign: 'center',
     lineHeight: 28,
@@ -328,47 +367,17 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     borderWidth: 2,
-    borderColor: '#E5E7EB',
     borderRadius: 16,
     paddingVertical: 18,
     paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
-  },
-  optionSelected: {
-    borderColor: '#3B82F6', // Blue highlight when selected
-    backgroundColor: '#EFF6FF',
-  },
-  optionCorrect: {
-    borderColor: '#10B981', // Green for correct
-    backgroundColor: '#ECFDF5',
-  },
-  optionWrong: {
-    borderColor: '#EF4444', // Red for wrong
-    backgroundColor: '#FEF2F2',
   },
   optionText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#4B5563',
-  },
-  optionTextSelected: {
-    color: '#1D4ED8',
-  },
-  optionTextState: {
-    color: '#1F2937',
   },
   actionFooter: {
     padding: 24,
     borderTopWidth: 1.5,
-    borderColor: '#E5E7EB',
-  },
-  footerCorrect: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#A7F3D0',
-  },
-  footerWrong: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FCA5A5',
   },
   feedbackTextContainer: {
     marginBottom: 16,
@@ -378,40 +387,20 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 4,
   },
-  feedbackCorrectText: {
-    color: '#065F46',
-  },
-  feedbackWrongText: {
-    color: '#991B1B',
-  },
   feedbackDescription: {
     fontSize: 14,
-    color: '#4B5563',
     fontWeight: '500',
   },
   continueButton: {
     height: 54,
-    backgroundColor: '#10B981',
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#E5E7EB',
-  },
-  buttonCorrect: {
-    backgroundColor: '#10B981',
-  },
-  buttonWrong: {
-    backgroundColor: '#EF4444',
   },
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
-  },
-  buttonTextCorrect: {
-    color: '#FFFFFF',
   },
   finishContainer: {
     flex: 1,
@@ -426,34 +415,28 @@ const styles = StyleSheet.create({
   finishTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#1F2937',
     marginBottom: 12,
   },
   finishSubtitle: {
     fontSize: 15,
-    color: '#6B7280',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 40,
   },
   xpBadge: {
-    backgroundColor: '#FEF3C7',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 24,
     marginBottom: 60,
     borderWidth: 1.5,
-    borderColor: '#FDE68A',
   },
   xpText: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#B45309',
   },
   finishButton: {
     width: '100%',
     height: 56,
-    backgroundColor: '#10B981',
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',

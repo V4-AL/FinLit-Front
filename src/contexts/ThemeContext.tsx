@@ -23,6 +23,9 @@ type ColorPalette = {
   tabBar: string;
   inputBg: string;
   errorText: string;
+  quizSelectBg: string;
+  quizSelectBorder: string;
+  quizSelectText: string;
 };
 
 const lightColors: ColorPalette = {
@@ -48,6 +51,9 @@ const lightColors: ColorPalette = {
   logoutText: '#DC2626',
   inputBg: '#F9FAFB',
   errorText: '#DC2626',
+  quizSelectBg: '#EFF6FF',
+  quizSelectBorder: '#3B82F6',
+  quizSelectText: '#1D4ED8',
 };
 
 const darkColors: ColorPalette = {
@@ -73,6 +79,9 @@ const darkColors: ColorPalette = {
   logoutText: '#F87171',
   inputBg: '#0F172A',
   errorText: '#F87171',
+  quizSelectBg: '#1E3A5F',
+  quizSelectBorder: '#3B82F6',
+  quizSelectText: '#93C5FD',
 };
 
 type ThemeContextType = {

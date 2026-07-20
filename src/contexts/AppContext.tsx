@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { ThemeProvider } from './ThemeContext';
 import { AuthProvider } from './AuthContext';
 import { ProgressProvider } from './ProgressContext';
+import { readJson, writeJson, STORAGE_KEYS } from '../services/storage';
 
 // --- App-level state: first launch + app-wide loading ---
 type AppContextType = {
@@ -17,8 +18,9 @@ function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: replace with real check, e.g. AsyncStorage.getItem('hasOnboarded')
     const bootstrap = async () => {
+      const hasOnboarded = await readJson<boolean>(STORAGE_KEYS.hasOnboarded);
+      setIsFirstLaunch(!hasOnboarded);
       setIsLoading(false);
     };
     bootstrap();
@@ -26,7 +28,7 @@ function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const completeOnboarding = () => {
     setIsFirstLaunch(false);
-    // TODO: persist, e.g. AsyncStorage.setItem('hasOnboarded', 'true')
+    writeJson(STORAGE_KEYS.hasOnboarded, true);
   };
 
   const value = useMemo(

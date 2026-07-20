@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Image, Animated } from 'react-native';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 const slideshowImages = [
     require('../../assets/Feed/sarah.webp'),
@@ -10,11 +11,16 @@ const slideshowImages = [
 const ROTATE_INTERVAL_MS = 3000;
 
 export default function ImageSlideshow() {
+const reducedMotion = useReducedMotion();
 const [index, setIndex] = React.useState(0);
 const fadeAnim = React.useRef(new Animated.Value(1)).current;
 
 React.useEffect(() => {
     const interval = setInterval(() => {
+    if (reducedMotion) {
+        setIndex(prev => (prev + 1) % slideshowImages.length);
+        return;
+    }
     Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 300,
@@ -30,12 +36,15 @@ React.useEffect(() => {
     }, ROTATE_INTERVAL_MS);
 
     return () => clearInterval(interval);
-}, [fadeAnim]);
+}, [fadeAnim, reducedMotion]);
 return (
     <Animated.Image
     source={slideshowImages[index]}
-    style={[styles.image, { opacity: fadeAnim }]}
+    style={[styles.image, { opacity: reducedMotion ? 1 : fadeAnim }]}
     resizeMode="cover"
+    accessible={false}
+    importantForAccessibility="no"
+    accessibilityElementsHidden
     />
 );
 }

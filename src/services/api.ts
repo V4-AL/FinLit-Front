@@ -1,7 +1,9 @@
 import axios from 'axios';
+import { auth } from './firebase';
 
-// The Spring Boot backend runs on port 8080 by default with /api prefix
-const API_BASE_URL = 'http://localhost:8080/api';
+// Override via EXPO_PUBLIC_API_URL (see .env.example) for staging/production builds.
+// Falls back to the local Spring Boot dev server, which only works on the same machine.
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080/api';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -10,6 +12,55 @@ export const apiClient = axios.create({
   },
   timeout: 10000,
 });
+
+// Attach the current Firebase ID token to every outgoing request. getIdToken() returns the
+// cached token and only hits the network to refresh it once it's close to expiring.
+apiClient.interceptors.request.use(async (config) => {
+  const token = await auth.currentUser?.getIdToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+const FIREBASE_AUTH_ERROR_MESSAGES: Record<string, string> = {
+  'auth/invalid-email': 'Please enter a valid email address.',
+  'auth/invalid-credential': 'Incorrect email or password.',
+  'auth/wrong-password': 'Incorrect email or password.',
+  'auth/user-not-found': 'Account not found.',
+  'auth/email-already-in-use': 'An account with that email already exists.',
+  'auth/weak-password': 'Password is too weak. Please choose a stronger one.',
+  'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
+  'auth/network-request-failed': 'Network error. Check your connection and try again.',
+};
+
+/** Turns an API/network failure into a message safe to show a user. */
+export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (error && typeof error === 'object' && 'code' in error && typeof (error as { code: unknown }).code === 'string') {
+    const code = (error as { code: string }).code;
+    if (code in FIREBASE_AUTH_ERROR_MESSAGES) return FIREBASE_AUTH_ERROR_MESSAGES[code];
+  }
+  if (axios.isAxiosError(error)) {
+    if (!error.response) {
+      return 'Network error. Check your connection and try again.';
+    }
+    const serverMessage = (error.response.data as { message?: string } | undefined)?.message;
+    if (serverMessage) return serverMessage;
+    switch (error.response.status) {
+      case 401:
+        return 'Incorrect email or password.';
+      case 404:
+        return 'Account not found.';
+      case 409:
+        return 'An account with that email already exists.';
+      case 429:
+        return 'Too many attempts. Please wait a moment and try again.';
+      default:
+        if (error.response.status >= 500) return 'Server error. Please try again in a moment.';
+    }
+  }
+  return fallback;
+}
 
 export interface User {
   id?: number;
@@ -46,6 +97,17 @@ export interface UserProgress {
 }
 
 export const apiService = {
+  // Auth endpoints
+  /**
+   * Syncs the signed-in Firebase user with the backend: creates the account on first sign-in
+   * (identified by the bearer token) or fetches the existing profile otherwise. `username` is
+   * only meaningful on first sync — the backend ignores it for an already-synced account.
+   */
+  syncUser: async (username?: string): Promise<User> => {
+    const response = await apiClient.post<User>('/auth/sync', username ? { username } : {});
+    return response.data;
+  },
+
   // Users endpoints
   createUser: async (username: string, email: string): Promise<User> => {
     const response = await apiClient.post<User>('/users', { username, email });
