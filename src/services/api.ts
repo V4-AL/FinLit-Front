@@ -62,10 +62,20 @@ export function getApiErrorMessage(error: unknown, fallback = 'Something went wr
   return fallback;
 }
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 export interface User {
   id?: number;
   username: string;
   email: string;
+  firebaseUid?: string;
+  totalPoints?: number;
+  availablePoints?: number;
+  spentPoints?: number;
+  currentStreak?: number;
+  longestStreak?: number;
+  badges?: string[];
+  goals?: string[];
   avatarUri?: string;
 }
 
@@ -90,14 +100,92 @@ export interface Module {
 
 export interface UserProgress {
   id?: number;
-  username: string;
+  username?: string;
   lessonId: number;
   completed: boolean;
   completionDate?: string;
+  pointsEarned?: number;
+  user?: User;
 }
 
+export interface LeaderboardEntry {
+  id: number;
+  username: string;
+  totalPoints: number;
+  badges: string[];
+}
+
+export interface LearningPath {
+  goals: string[];
+  recommendedModules?: Module[];
+}
+
+export interface LearningPathDetails {
+  goals: string[];
+  completedLessons?: number;
+  totalLessons?: number;
+  progressPercent?: number;
+}
+
+export interface Question {
+  id: number;
+  questionText: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  correctAnswer: string;
+  explanation?: string;
+  quiz?: Quiz;
+}
+
+export interface Quiz {
+  id: number;
+  title: string;
+  description: string;
+  courseModule?: Module;
+  questions?: Question[];
+}
+
+export interface QuizResult {
+  id: number;
+  score: number;
+  totalQuestions: number;
+  completedAt: string;
+  quiz?: Quiz;
+  user?: User;
+}
+
+export interface Subscription {
+  id: number;
+  status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED' | 'CANCELLED';
+  startDate?: string;
+  expiryDate?: string;
+  lastRenewalDate?: string;
+  paystackCustomerCode?: string;
+  paystackReference?: string;
+  user?: User;
+}
+
+export interface ModuleAccessResponse {
+  hasAccess: boolean;
+  reason?: string;
+  livesRemaining?: number;
+}
+
+export interface PaymentInitResponse {
+  authorizationUrl?: string;
+  authorization_url?: string;
+  accessCode?: string;
+  reference?: string;
+  message?: string;
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
+
 export const apiService = {
-  // Auth endpoints
+  // ── Auth ────────────────────────────────────────────────────────────────────
+
   /**
    * Syncs the signed-in Firebase user with the backend: creates the account on first sign-in
    * (identified by the bearer token) or fetches the existing profile otherwise. `username` is
@@ -108,7 +196,147 @@ export const apiService = {
     return response.data;
   },
 
-  // Users endpoints
+  /** Returns the current authenticated user's full profile from the backend. */
+  getMe: async (): Promise<User> => {
+    const response = await apiClient.get<User>('/auth/me');
+    return response.data;
+  },
+
+  // ── Modules ─────────────────────────────────────────────────────────────────
+
+  getModules: async (): Promise<Module[]> => {
+    const response = await apiClient.get<Module[]>('/modules');
+    return response.data;
+  },
+
+  getModuleById: async (id: number): Promise<Module> => {
+    const response = await apiClient.get<Module>(`/modules/${id}`);
+    return response.data;
+  },
+
+  // ── Lessons ─────────────────────────────────────────────────────────────────
+
+  getLesson: async (id: number): Promise<Lesson> => {
+    const response = await apiClient.get<Lesson>(`/lessons/${id}`);
+    return response.data;
+  },
+
+  getAllLessons: async (): Promise<Lesson[]> => {
+    const response = await apiClient.get<Lesson[]>('/lessons');
+    return response.data;
+  },
+
+  // ── Gamification ─────────────────────────────────────────────────────────────
+
+  /** Marks a lesson complete and returns updated progress with XP earned. */
+  completeLesson: async (lessonId: number): Promise<UserProgress> => {
+    const response = await apiClient.post<UserProgress>(
+      `/gamification/complete-lesson?lessonId=${lessonId}`
+    );
+    return response.data;
+  },
+
+  /** Returns the global leaderboard ranked by total points. */
+  getLeaderboard: async (): Promise<LeaderboardEntry[]> => {
+    const response = await apiClient.get<LeaderboardEntry[]>('/gamification/leaderboard');
+    return response.data;
+  },
+
+  // ── Learning Path ─────────────────────────────────────────────────────────────
+
+  /** Returns the user's current learning path (goals + recommended modules). */
+  getLearningPath: async (): Promise<LearningPath> => {
+    const response = await apiClient.get<LearningPath>('/learning-path');
+    return response.data;
+  },
+
+  /** Returns the list of all goals a user can select during onboarding. */
+  getAvailableGoals: async (): Promise<string[]> => {
+    const response = await apiClient.get<string[]>('/learning-path/available-goals');
+    return response.data;
+  },
+
+  /** Returns detailed progress metrics for the user's active learning path. */
+  getLearningPathDetails: async (): Promise<LearningPathDetails> => {
+    const response = await apiClient.get<LearningPathDetails>('/learning-path/details');
+    return response.data;
+  },
+
+  /** Sets the user's learning goals; returns the updated User profile. */
+  setGoals: async (goals: string[]): Promise<User> => {
+    const response = await apiClient.post<User>('/learning-path/goals', goals);
+    return response.data;
+  },
+
+  // ── Quizzes ──────────────────────────────────────────────────────────────────
+
+  /** Returns all quizzes for a given course module. */
+  getQuizzesByModule: async (courseModuleId: number): Promise<Quiz[]> => {
+    const response = await apiClient.get<Quiz[]>(`/quizzes/course-module/${courseModuleId}`);
+    return response.data;
+  },
+
+  /** Returns all questions for a given quiz. */
+  getQuizQuestions: async (quizId: number): Promise<Question[]> => {
+    const response = await apiClient.get<Question[]>(`/quizzes/${quizId}/questions`);
+    return response.data;
+  },
+
+  /** Submits quiz answers (map of questionId → answer) and returns a QuizResult. */
+  submitQuiz: async (quizId: number, answers: Record<string, string>): Promise<QuizResult> => {
+    const response = await apiClient.post<QuizResult>(`/quizzes/${quizId}/submit`, answers);
+    return response.data;
+  },
+
+  // ── Subscription ──────────────────────────────────────────────────────────────
+
+  /** Returns the current user's subscription record. */
+  getSubscriptionStatus: async (): Promise<Subscription> => {
+    const response = await apiClient.get<Subscription>('/subscription/status');
+    return response.data;
+  },
+
+  /** Checks whether the user has access to a given module (subscription or lives). */
+  checkModuleAccess: async (moduleId: number): Promise<ModuleAccessResponse> => {
+    const response = await apiClient.get<ModuleAccessResponse>(
+      `/subscription/access/module/${moduleId}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Initialises a Paystack payment session for Pro subscription.
+   * Returns an object containing `authorization_url` or `authorizationUrl`.
+   */
+  initializePayment: async (): Promise<PaymentInitResponse> => {
+    const response = await apiClient.post<PaymentInitResponse>('/subscription/initialize');
+    return response.data;
+  },
+
+  /** Purchases a hint using available points. */
+  buyHint: async (): Promise<Record<string, unknown>> => {
+    const response = await apiClient.post<Record<string, unknown>>('/subscription/buy-hint');
+    return response.data;
+  },
+
+  /** Purchases a life for a specific module using available points. */
+  buyLife: async (moduleId: number): Promise<Record<string, unknown>> => {
+    const response = await apiClient.post<Record<string, unknown>>(
+      `/subscription/buy-life/module/${moduleId}`
+    );
+    return response.data;
+  },
+
+  /** Uses one life to access a locked module. */
+  useLife: async (moduleId: number): Promise<Record<string, unknown>> => {
+    const response = await apiClient.post<Record<string, unknown>>(
+      `/subscription/use-life/module/${moduleId}`
+    );
+    return response.data;
+  },
+
+  // ── Legacy / unused (kept for backward-compat) ────────────────────────────────
+
   createUser: async (username: string, email: string): Promise<User> => {
     const response = await apiClient.post<User>('/users', { username, email });
     return response.data;
@@ -124,30 +352,6 @@ export const apiService = {
     return response.data;
   },
 
-  // Modules endpoints
-  getModules: async (): Promise<Module[]> => {
-    const response = await apiClient.get<Module[]>('/modules');
-    return response.data;
-  },
-
-  getModuleById: async (id: number): Promise<Module> => {
-    const response = await apiClient.get<Module>(`/modules/${id}`);
-    return response.data;
-  },
-
-  // Lessons endpoints
-  getLesson: async (id: number): Promise<Lesson> => {
-    const response = await apiClient.get<Lesson>(`/lessons/${id}`);
-    return response.data;
-  },
-
-  getAllLessons: async (): Promise<Lesson[]> => {
-    const response = await apiClient.get<Lesson[]>('/lessons');
-    return response.data;
-  },
-
-
-  // Progress endpoints
   saveProgress: async (username: string, lessonId: number, completed: boolean): Promise<UserProgress> => {
     const response = await apiClient.post<UserProgress>('/progress', {
       username,
@@ -157,16 +361,14 @@ export const apiService = {
     });
     return response.data;
   },
-  
 
   getProgress: async (username: string): Promise<UserProgress[]> => {
     try {
       const response = await apiClient.get<UserProgress[]>(`/progress/${username}`);
       return response.data;
-    } catch (error) {
-      // Fallback if the endpoint is /progress or has different structure
+    } catch {
       const response = await apiClient.get<UserProgress[]>('/progress');
-      return response.data.filter(p => p.username === username);
+      return response.data.filter((p) => p.username === username);
     }
   },
 };

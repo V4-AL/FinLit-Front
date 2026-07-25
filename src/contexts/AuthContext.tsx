@@ -26,8 +26,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Firebase restores the persisted session (see services/firebase.ts) and fires this once
-    // that's resolved, so it doubles as our app-boot hydration.
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
         setCurrentUser(null);
@@ -40,7 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser(user);
         await writeJson(STORAGE_KEYS.currentUser, user);
       } catch {
-        // Backend unreachable — fall back to the last synced profile rather than booting the user.
         const cached = await readJson<User>(STORAGE_KEYS.currentUser);
         setCurrentUser(cached);
       } finally {
@@ -66,14 +63,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const credential = await createUserWithEmailAndPassword(auth, email, password ?? '');
+      console.log('FIREBASE USER CREATED', credential.user.uid);
       await updateProfile(credential.user, { displayName: username });
+      console.log('PROFILE UPDATED');
       const user = await apiService.syncUser(username);
+      console.log('BACKEND SYNC SUCCESS', user);
       setCurrentUser(user);
       await writeJson(STORAGE_KEYS.currentUser, user);
+    } catch (err) {
+      console.log('SIGNUP FAILED AT:', err);
+      throw err;
     } finally {
       setIsLoading(false);
     }
-  };
+  };   // ← ADDED: this was the missing brace, closes `signup` here
 
   const logout = async () => {
     await signOut(auth);
@@ -82,8 +85,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateAvatar = async (uri: string) => {
-    // TODO: replace with your real avatar-upload endpoint
-    // const response = await apiClient.post('/user/avatar', { uri });
     setCurrentUser(prev => {
       const next = prev ? { ...prev, avatarUri: uri } : prev;
       if (next) writeJson(STORAGE_KEYS.currentUser, next);

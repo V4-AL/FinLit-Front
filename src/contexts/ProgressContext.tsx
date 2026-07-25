@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { readJson, writeJson, STORAGE_KEYS } from '../services/storage';
+import { apiService } from '../services/api';
 
 type ProgressContextType = {
   xp: number;
@@ -87,14 +88,28 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     const updatedStreak = nextStreak(streak, lastActivityDate, today);
     const updatedCompleted = alreadyCompleted ? completedLessons : [...completedLessons, lessonId];
     // Only first-time completion earns XP — replaying a lesson shouldn't farm infinite XP.
-    const updatedXp = alreadyCompleted ? xp : xp + XP_PER_LESSON;
+    const xpGain = alreadyCompleted ? 0 : XP_PER_LESSON;
+    const updatedXp = xp + xpGain;
 
+    // Optimistic local update so the UI responds immediately
     setCompletedLessons(updatedCompleted);
     setStreak(updatedStreak);
     setLastActivityDate(today);
     setXp(updatedXp);
     persist({ xp: updatedXp, streak: updatedStreak, completedLessons: updatedCompleted, lastActivityDate: today });
-    // TODO: also sync completion to the backend, e.g. apiService.saveProgress(username, lessonId, true)
+
+    // Fire-and-forget backend sync — also apply the server's authoritative XP if available
+    try {
+      const progress = await apiService.completeLesson(lessonId);
+      if (progress.pointsEarned != null && !alreadyCompleted) {
+        // Server may award a different amount than our local constant — reconcile
+        const serverXp = xp + progress.pointsEarned;
+        setXp(serverXp);
+        persist({ xp: serverXp, streak: updatedStreak, completedLessons: updatedCompleted, lastActivityDate: today });
+      }
+    } catch {
+      // Server sync failed — local update still stands; will reconcile on next launch
+    }
   };
 
   const value = useMemo(

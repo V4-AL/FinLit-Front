@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { ThemeProvider } from './ThemeContext';
 import { AuthProvider } from './AuthContext';
 import { ProgressProvider } from './ProgressContext';
+import { SubscriptionProvider } from './SubscriptionContext';
 import { readJson, writeJson, STORAGE_KEYS } from '../services/storage';
 
 // --- App-level state: first launch + app-wide loading ---
@@ -58,7 +59,9 @@ export default function AppProviders({ children }: AppProvidersProps) {
       <AppStateProvider>
         <AuthProvider>
           <ProgressProvider>
-            {children}
+            <SubscriptionProvider>
+              {children}
+            </SubscriptionProvider>
           </ProgressProvider>
         </AuthProvider>
       </AppStateProvider>
@@ -69,3 +72,4 @@ export default function AppProviders({ children }: AppProvidersProps) {
 export { useTheme } from './ThemeContext';
 export { useAuth } from './AuthContext';
 export { useProgress } from './ProgressContext';
+export { useSubscription } from './SubscriptionContext';

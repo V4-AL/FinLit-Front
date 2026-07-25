@@ -6,6 +6,8 @@ import { useTheme } from '../../src/contexts/ThemeContext';
 const TabIcon = ({ name, color, size }: { name: string; color: ColorValue; size: number }) => {
   let emoji = '🏠';
   if (name === 'modules') emoji = '📚';
+  if (name === 'leaderboard') emoji = '🏆';
+  if (name === 'payment') emoji = '💳';
   if (name === 'settings') emoji = '⚙️';
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
@@ -41,6 +43,8 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: 'Dashboard' }} />
       <Tabs.Screen name="modules" options={{ title: 'Modules' }} />
+      <Tabs.Screen name="leaderboard" options={{ title: 'Leaderboard' }} />
+      <Tabs.Screen name="payment" options={{ title: 'Upgrade' }} />
       <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
     </Tabs>
   );

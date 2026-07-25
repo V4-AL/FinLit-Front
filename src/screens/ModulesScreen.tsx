@@ -1,11 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { apiService, Module, Lesson } from '../services/api';
+import { apiService, Module, Lesson, ModuleAccessResponse } from '../services/api';
 import { useProgress } from '../contexts/ProgressContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { useRouter } from 'expo-router';
-// Fallback modules matching DataLoader json formats for premium demo resilience
+
+// ─── Fallback data ─────────────────────────────────────────────────────────────
+
 const FALLBACK_MODULES: Module[] = [
   {
     id: 1,
@@ -22,8 +33,8 @@ const FALLBACK_MODULES: Module[] = [
         content: JSON.stringify([
           { type: 'text', value: 'Welcome to FinLit! A budget is a plan for your money. It helps you ensure you have enough for the things you need and the things that are important to you.' },
           { type: 'text', value: 'Think of budgeting not as a restriction, but as a tool that gives you absolute freedom over your cash flow. It shows you exactly where your money goes instead of wondering where it went.' },
-          { type: 'quiz', question: 'What is the primary purpose of a budget?', options: ['To restrict all spending', 'To map out and control your cash flow', 'To make you rich overnight'], answer: 1 }
-        ])
+          { type: 'quiz', question: 'What is the primary purpose of a budget?', options: ['To restrict all spending', 'To map out and control your cash flow', 'To make you rich overnight'], answer: 1 },
+        ]),
       },
       {
         id: 2,
@@ -31,10 +42,9 @@ const FALLBACK_MODULES: Module[] = [
         description: 'A simple, highly popular framework to allocate your income dynamically.',
         duration: 5,
         content: JSON.stringify([
-          { type: 'text', value: 'The 50/30/20 rule is a simple budgeting method. It divides your after-tax income into three categories: 50% for Needs, 30% for Wants, and 20% for Savings.' },
-          { type: 'text', value: 'Needs are essentials like rent, utilities, and groceries. Wants are lifestyle choices like dining out or streaming services. Savings include retirement investments or emergency funds.' },
-          { type: 'quiz', question: 'Under the 50/30/20 rule, which category does saving for an emergency fund fall into?', options: ['50% Needs', '30% Wants', '20% Savings'], answer: 2 }
-        ])
+          { type: 'text', value: 'The 50/30/20 rule divides your after-tax income into: 50% for Needs, 30% for Wants, and 20% for Savings.' },
+          { type: 'quiz', question: 'Under the 50/30/20 rule, saving for an emergency fund falls into?', options: ['50% Needs', '30% Wants', '20% Savings'], answer: 2 },
+        ]),
       },
       {
         id: 3,
@@ -42,12 +52,11 @@ const FALLBACK_MODULES: Module[] = [
         description: 'How to monitor transactions and identify leaks in your daily spending.',
         duration: 4,
         content: JSON.stringify([
-          { type: 'text', value: 'You can create the best budget in the world, but if you do not track your actual expenses, it won\'t work. Tracking exposes the hidden leaks in your cash flow.' },
-          { type: 'text', value: 'Try categorized tracking weekly. Checking statements once a month is often too late to adjust habits.' },
-          { type: 'quiz', question: 'Why is tracking expenses crucial for a budget?', options: ['It increases your credit score directly', 'It verifies if your actual spending aligns with your budget plan', 'It allows you to get refunds'], answer: 1 }
-        ])
-      }
-    ]
+          { type: 'text', value: 'Tracking your expenses exposes the hidden leaks in your cash flow.' },
+          { type: 'quiz', question: 'Why is tracking expenses crucial?', options: ['Increases credit score', 'Verifies spending aligns with your budget', 'Allows refunds'], answer: 1 },
+        ]),
+      },
+    ],
   },
   {
     id: 2,
@@ -62,10 +71,9 @@ const FALLBACK_MODULES: Module[] = [
         description: 'Learn how compounding makes your interest earn interest, multiplying wealth over time.',
         duration: 5,
         content: JSON.stringify([
-          { type: 'text', value: 'Simple interest is earned only on the original principal. Compound interest is earned on the principal PLUS all accumulated interest from previous periods.' },
-          { type: 'text', value: 'As interest compounds, your balance grows exponentially rather than linearly. Over long periods, this difference is massive.' },
-          { type: 'quiz', question: 'What does interest "compounding" mean?', options: ['You only earn interest once a year', 'Your earned interest starts earning interest as well', 'The bank charges you a fee'], answer: 1 }
-        ])
+          { type: 'text', value: 'Compound interest is earned on the principal PLUS all accumulated interest from previous periods.' },
+          { type: 'quiz', question: 'What does interest "compounding" mean?', options: ['Earn interest once a year', 'Earned interest earns more interest', 'The bank charges a fee'], answer: 1 },
+        ]),
       },
       {
         id: 5,
@@ -73,63 +81,61 @@ const FALLBACK_MODULES: Module[] = [
         description: 'A quick mental shortcut to calculate how fast your investments will double.',
         duration: 4,
         content: JSON.stringify([
-          { type: 'text', value: 'The Rule of 72 is a quick way to estimate how many years it will take for your money to double. Divide 72 by your expected annual interest rate.' },
-          { type: 'text', value: 'For example, at an 8% interest rate, your money will double in approximately 9 years (72 / 8 = 9).' },
-          { type: 'quiz', question: 'If you invest at a 6% annual return, about how many years will it take to double your investment?', options: ['12 years', '6 years', '72 years'], answer: 0 }
-        ])
-      }
-    ]
-  }
+          { type: 'text', value: 'Divide 72 by your annual interest rate to find years to double. At 8%, that is 9 years.' },
+          { type: 'quiz', question: 'At a 6% annual return, how long to double your money?', options: ['12 years', '6 years', '72 years'], answer: 0 },
+        ]),
+      },
+    ],
+  },
 ];
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
 export default function ModulesScreen() {
   const { completedLessons } = useProgress();
   const { colors } = useTheme();
+  const { isSubscribed, checkModuleAccess, buyLife, useLife } = useSubscription();
   const router = useRouter();
+
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
+  // Map of moduleId → access response (cached after first check)
+  const [accessMap, setAccessMap] = useState<Record<number, ModuleAccessResponse>>({});
+  const [accessLoading, setAccessLoading] = useState<Record<number, boolean>>({});
+
+  // ── Fetch modules ────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const fetchModulesAndLessons = async () => {
       try {
-        // Fetch modules and all lessons concurrently
         const [fetchedModules, fetchedLessons] = await Promise.all([
           apiService.getModules(),
           apiService.getAllLessons(),
         ]);
 
-
         if (fetchedModules && fetchedModules.length > 0) {
-          // Sort modules by moduleOrder
           const sortedModules = [...fetchedModules].sort(
             (a, b) => (a.moduleOrder ?? 0) - (b.moduleOrder ?? 0)
           );
-          // Distribute lessons across modules evenly by order.
-          // Since the backend doesn't have a module FK on Lesson, we distribute
-          // them sequentially: split all lessons into groups based on module count.
           let mappedModules: Module[];
           if (fetchedLessons && fetchedLessons.length > 0) {
             const totalModules = sortedModules.length;
             const lessonsPerModule = Math.ceil(fetchedLessons.length / totalModules);
             mappedModules = sortedModules.map((m, idx) => {
-              // Try finding the matching fallback to cross-reference
               const fallback = FALLBACK_MODULES.find(
                 fm => fm.moduleId === m.moduleId || fm.title === m.title
               );
-              // Slice lessons for this module from the sorted flat list
               const sliceStart = idx * lessonsPerModule;
-              const sliceEnd = sliceStart + lessonsPerModule;
-              const backendLessonsForModule = fetchedLessons.slice(sliceStart, sliceEnd);
+              const backendLessonsForModule = fetchedLessons.slice(sliceStart, sliceStart + lessonsPerModule);
               return {
                 ...m,
-                // Prefer real backend lessons; fallback to mock if slice is empty
                 lessons: backendLessonsForModule.length > 0
                   ? backendLessonsForModule
                   : fallback?.lessons || [],
               };
             });
           } else {
-            // Lessons endpoint empty or not yet populated — merge with fallback
             mappedModules = sortedModules.map(m => {
               const fallback = FALLBACK_MODULES.find(
                 fm => fm.moduleId === m.moduleId || fm.title === m.title
@@ -137,7 +143,6 @@ export default function ModulesScreen() {
               return { ...m, lessons: m.lessons || fallback?.lessons || [] };
             });
           }
-          
           setModules(mappedModules);
         } else {
           setModules(FALLBACK_MODULES);
@@ -151,35 +156,136 @@ export default function ModulesScreen() {
         setLoading(false);
       }
     };
-
     fetchModulesAndLessons();
   }, []);
-  // Helper to determine if a lesson is unlocked
-  const isLessonUnlocked = (lessonId: number, moduleIndex: number, lessonIndex: number) => {
-    // First lesson of first module is always unlocked
+
+  // ── Access checking ──────────────────────────────────────────────────────────
+
+  // Check access for all modules once they load (only for non-subscribed users)
+  useEffect(() => {
+    if (modules.length === 0 || isSubscribed) return;
+    const checkAll = async () => {
+      const results: Record<number, ModuleAccessResponse> = {};
+      await Promise.all(
+        modules.map(async (m) => {
+          try {
+            results[m.id] = await checkModuleAccess(m.id);
+          } catch {
+            results[m.id] = { hasAccess: true }; // fail open
+          }
+        })
+      );
+      setAccessMap(results);
+    };
+    checkAll();
+  }, [modules, isSubscribed, checkModuleAccess]);
+
+  const getModuleAccess = (moduleId: number): ModuleAccessResponse => {
+    if (isSubscribed) return { hasAccess: true };
+    return accessMap[moduleId] ?? { hasAccess: true }; // default open while checking
+  };
+
+  // ── Handle "Use Life" ─────────────────────────────────────────────────────────
+
+  const handleUseLife = useCallback(
+    async (mod: Module) => {
+      const access = getModuleAccess(mod.id);
+      const lives = access.livesRemaining ?? 0;
+
+      if (lives <= 0) {
+        Alert.alert(
+          'No Lives Available',
+          'You need lives to unlock this module. Purchase lives from the Upgrade tab, or subscribe for unlimited access.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Upgrade', onPress: () => router.push('/payment') },
+          ]
+        );
+        return;
+      }
+
+      Alert.alert(
+        'Use a Life?',
+        `You have ${lives} life${lives !== 1 ? 's' : ''} remaining. Use one to access "${mod.title}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Use Life',
+            style: 'default',
+            onPress: async () => {
+              setAccessLoading(prev => ({ ...prev, [mod.id]: true }));
+              const ok = await useLife(mod.id);
+              if (ok) {
+                // Re-check access for this module
+                const updated = await checkModuleAccess(mod.id);
+                setAccessMap(prev => ({ ...prev, [mod.id]: updated }));
+              } else {
+                Alert.alert('Error', 'Could not use life. Please try again.');
+              }
+              setAccessLoading(prev => ({ ...prev, [mod.id]: false }));
+            },
+          },
+        ]
+      );
+    },
+    [accessMap, isSubscribed, useLife, checkModuleAccess, router]
+  );
+
+  // ── Handle "Buy Life" ─────────────────────────────────────────────────────────
+
+  const handleBuyLife = useCallback(
+    async (mod: Module) => {
+      Alert.alert(
+        'Buy a Life',
+        `Purchase a life using your points to unlock "${mod.title}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Buy Life',
+            onPress: async () => {
+              setAccessLoading(prev => ({ ...prev, [mod.id]: true }));
+              const ok = await buyLife(mod.id);
+              if (ok) {
+                const updated = await checkModuleAccess(mod.id);
+                setAccessMap(prev => ({ ...prev, [mod.id]: updated }));
+              } else {
+                Alert.alert('Error', 'Could not purchase life. You may not have enough points.');
+              }
+              setAccessLoading(prev => ({ ...prev, [mod.id]: false }));
+            },
+          },
+        ]
+      );
+    },
+    [buyLife, checkModuleAccess]
+  );
+
+  // ── Lesson unlock logic ──────────────────────────────────────────────────────
+
+  const isLessonUnlocked = (lessonId: number, moduleIndex: number, lessonIndex: number): boolean => {
     if (moduleIndex === 0 && lessonIndex === 0) return true;
-    // Check if the lesson is already completed
     if (completedLessons.includes(lessonId)) return true;
-    // Otherwise, check if the previous lesson in the current module is completed
     if (lessonIndex > 0) {
       const prevLesson = modules[moduleIndex].lessons?.[lessonIndex - 1];
       return prevLesson ? completedLessons.includes(prevLesson.id) : false;
     }
-    // If it's the first lesson of a subsequent module, check if the last lesson of the previous module is completed
     if (moduleIndex > 0) {
       const prevModule = modules[moduleIndex - 1];
       const prevModuleLessons = prevModule.lessons || [];
       if (prevModuleLessons.length === 0) return true;
-      const lastLessonOfPrevModule = prevModuleLessons[prevModuleLessons.length - 1];
-      return completedLessons.includes(lastLessonOfPrevModule.id);
+      return completedLessons.includes(prevModuleLessons[prevModuleLessons.length - 1].id);
     }
     return false;
   };
+
   const handleLessonClick = (lesson: Lesson, unlocked: boolean) => {
     if (unlocked) {
       router.push({ pathname: '/lesson/[lessonId]', params: { lessonId: String(lesson.id) } });
     }
   };
+
+  // ── Loading ──────────────────────────────────────────────────────────────────
+
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
@@ -187,12 +293,16 @@ export default function ModulesScreen() {
       </View>
     );
   }
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Learning Modules</Text>
         <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Follow your personal finance roadmap</Text>
       </View>
+
       {usingFallback && (
         <View style={[styles.fallbackNotice, { backgroundColor: colors.streakBadgeBg, borderColor: colors.streakBadgeBorder }]}>
           <Text style={[styles.fallbackNoticeText, { color: colors.xpBadgeText }]}>
@@ -200,18 +310,27 @@ export default function ModulesScreen() {
           </Text>
         </View>
       )}
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {modules.map((mod, modIdx) => {
           const moduleLessons = mod.lessons || [];
           const completedCount = moduleLessons.filter(l => completedLessons.includes(l.id)).length;
-          const progressPercent = moduleLessons.length > 0 ? (completedCount / moduleLessons.length) * 100 : 0;
+          const progressPercent = moduleLessons.length > 0
+            ? (completedCount / moduleLessons.length) * 100
+            : 0;
+          const access = getModuleAccess(mod.id);
+          const isModuleLocked = !access.hasAccess;
+          const isAccessChecking = !!accessLoading[mod.id];
+          const lives = access.livesRemaining ?? 0;
 
           return (
             <View key={mod.id} style={styles.moduleSection}>
               <View style={[styles.moduleHeaderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.moduleMeta}>
                   <Text style={[styles.moduleNumber, { color: colors.accent }]}>MODULE {modIdx + 1}</Text>
-                  <Text style={[styles.moduleProgress, { color: colors.textSecondary }]}>{completedCount}/{moduleLessons.length} Completed</Text>
+                  <Text style={[styles.moduleProgress, { color: colors.textSecondary }]}>
+                    {completedCount}/{moduleLessons.length} Completed
+                  </Text>
                 </View>
                 <Text style={[styles.moduleTitle, { color: colors.text }]}>{mod.title}</Text>
                 <Text style={[styles.moduleDescription, { color: colors.textSecondary }]}>{mod.description}</Text>
@@ -222,47 +341,87 @@ export default function ModulesScreen() {
                 >
                   <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: colors.accent }]} />
                 </View>
+
+                {/* Access gating actions */}
+                {isModuleLocked && !isSubscribed && (
+                  <View style={styles.lockedActions}>
+                    <View style={[styles.lockedBadge, { backgroundColor: colors.logoutBg, borderColor: colors.logoutBorder }]}>
+                      <Text style={styles.lockedBadgeEmoji} accessible={false}>🔒</Text>
+                      <Text style={[styles.lockedBadgeText, { color: colors.logoutText }]}>Locked</Text>
+                    </View>
+                    {isAccessChecking ? (
+                      <ActivityIndicator size="small" color={colors.accent} style={{ marginLeft: 8 }} />
+                    ) : (
+                      <View style={styles.lockedButtonRow}>
+                        {lives > 0 && (
+                          <TouchableOpacity
+                            style={[styles.lifeBtn, { borderColor: colors.accent, backgroundColor: colors.accentLight }]}
+                            onPress={() => handleUseLife(mod)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Use a life to unlock ${mod.title}. ${lives} lives remaining.`}
+                          >
+                            <Text style={styles.lifeBtnEmoji} accessible={false}>❤️</Text>
+                            <Text style={[styles.lifeBtnText, { color: colors.accentDark }]}>
+                              Use Life ({lives})
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                          style={[styles.upgradeBtn, { backgroundColor: colors.accent }]}
+                          onPress={() => router.push('/payment')}
+                          accessibilityRole="button"
+                          accessibilityLabel="Upgrade to Pro to unlock this module"
+                        >
+                          <Text style={styles.upgradeBtnText}>Upgrade 🚀</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
-              <View style={styles.timelineList}>
+
+              {/* Lessons list — dimmed if module is locked */}
+              <View style={[styles.timelineList, isModuleLocked && styles.lockedOverlay]}>
                 {moduleLessons.map((lesson, lesIdx) => {
                   const completed = completedLessons.includes(lesson.id);
-                  const unlocked = isLessonUnlocked(lesson.id, modIdx, lesIdx);
+                  const unlocked = !isModuleLocked && isLessonUnlocked(lesson.id, modIdx, lesIdx);
                   const statusLabel = completed ? 'Completed' : unlocked ? 'Start lesson' : 'Locked';
+
                   return (
                     <TouchableOpacity
                       key={lesson.id}
                       style={[
                         styles.lessonRow,
                         { backgroundColor: colors.surface, borderColor: colors.border },
-                        !unlocked ? { opacity: 0.6 } : null,
+                        (!unlocked || isModuleLocked) ? { opacity: 0.55 } : null,
                       ]}
                       onPress={() => handleLessonClick(lesson, unlocked)}
                       activeOpacity={unlocked ? 0.7 : 1}
                       accessibilityRole="button"
                       accessibilityLabel={`${lesson.title}, ${lesson.duration} minutes, ${statusLabel}`}
-                      accessibilityState={{ disabled: !unlocked }}
+                      accessibilityState={{ disabled: !unlocked || isModuleLocked }}
                     >
                       <View style={[
                         styles.indicatorCircle,
                         completed
                           ? { backgroundColor: colors.accentLight }
-                          : !unlocked
+                          : (!unlocked || isModuleLocked)
                           ? { backgroundColor: colors.border }
-                          : { backgroundColor: colors.accentLight, borderWidth: 1.5, borderColor: colors.accent }
+                          : { backgroundColor: colors.accentLight, borderWidth: 1.5, borderColor: colors.accent },
                       ]}>
                         <Text style={[styles.indicatorText, { color: colors.accent }]} accessible={false}>
-                          {completed ? '✓' : !unlocked ? '🔒' : lesIdx + 1}
+                          {completed ? '✓' : (!unlocked || isModuleLocked) ? '🔒' : lesIdx + 1}
                         </Text>
                       </View>
                       <View style={styles.lessonInfo}>
-                        <Text style={[styles.lessonTitle, { color: unlocked ? colors.text : colors.textMuted }]}>
+                        <Text style={[styles.lessonTitle, { color: unlocked && !isModuleLocked ? colors.text : colors.textMuted }]}>
                           {lesson.title}
                         </Text>
                         <Text style={[styles.lessonMeta, { color: colors.textSecondary }]}>
-                          {lesson.duration} mins • {completed ? 'Completed' : unlocked ? 'Start Lesson' : 'Locked'}
+                          {lesson.duration} mins • {completed ? 'Completed' : unlocked && !isModuleLocked ? 'Start Lesson' : 'Locked'}
                         </Text>
                       </View>
-                      {unlocked && !completed && (
+                      {unlocked && !completed && !isModuleLocked && (
                         <Text style={[styles.arrowIcon, { color: colors.accent }]}>➔</Text>
                       )}
                     </TouchableOpacity>
@@ -276,17 +435,23 @@ export default function ModulesScreen() {
     </SafeAreaView>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  fallbackNotice: { marginHorizontal: 24, marginTop: 16, borderRadius: 12, borderWidth: 1, paddingVertical: 10, paddingHorizontal: 14 },
+  fallbackNotice: {
+    marginHorizontal: 24, marginTop: 16,
+    borderRadius: 12, borderWidth: 1, paddingVertical: 10, paddingHorizontal: 14,
+  },
   fallbackNoticeText: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
   header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16, borderBottomWidth: 1 },
   headerTitle: { fontSize: 24, fontWeight: '800' },
   headerSubtitle: { fontSize: 14, marginTop: 4, fontWeight: '500' },
   scrollContent: { padding: 24 },
   moduleSection: { marginBottom: 32 },
-  moduleHeaderCard: { borderRadius: 20, padding: 20, borderWidth: 1, elevation: 1 },
+  moduleHeaderCard: { borderRadius: 20, padding: 20, borderWidth: 1 },
   moduleMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   moduleNumber: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
   moduleProgress: { fontSize: 11, fontWeight: '700' },
@@ -294,9 +459,39 @@ const styles = StyleSheet.create({
   moduleDescription: { fontSize: 13, lineHeight: 18, marginBottom: 16 },
   progressBarBg: { height: 6, borderRadius: 3, overflow: 'hidden' },
   progressBarFill: { height: '100%' },
+
+  // Locked module UI
+  lockedActions: { marginTop: 16 },
+  lockedBadge: {
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+    borderRadius: 20, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 12,
+  },
+  lockedBadgeEmoji: { fontSize: 12, marginRight: 4 },
+  lockedBadgeText: { fontSize: 12, fontWeight: '700' },
+  lockedButtonRow: { flexDirection: 'row', gap: 10 },
+  lifeBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    borderWidth: 1.5, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 9,
+  },
+  lifeBtnEmoji: { fontSize: 14, marginRight: 6 },
+  lifeBtnText: { fontSize: 13, fontWeight: '700' },
+  upgradeBtn: {
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9,
+  },
+  upgradeBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  lockedOverlay: { opacity: 0.85 },
+
+  // Lesson rows
   timelineList: { marginTop: 16, paddingLeft: 12 },
-  lessonRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1 },
-  indicatorCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  lessonRow: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1,
+  },
+  indicatorCircle: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center', marginRight: 16,
+  },
   indicatorText: { fontSize: 13, fontWeight: '800' },
   lessonInfo: { flex: 1 },
   lessonTitle: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
